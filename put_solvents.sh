@@ -1,4 +1,7 @@
 #!/bin/bash
+# This very simiple script puts values for dielectric constants and refractive indeces 
+# in for the placeholders EPS and NSQ in all input-files in the folder depending on the 
+# name (endding) of the respective files.
 
 for i in *mecn.in *acn.in ; do echo mecn ; sed -i s/NSQ/1.81/ $i ; sed -i s/EPS/35.7/ $i ; done
 for i in *eth.in *et2o.in ; do echo et2o ; sed -i s/NSQ/1.83/ $i ; sed -i s/EPS/4.33/ $i ; done
