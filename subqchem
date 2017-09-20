@@ -2,7 +2,7 @@
 
 dir=`pwd`
 PGM_NAME="subqchem submit script"
-PGM_VERSION="1.0"
+PGM_VERSION="1.1"
 BINARY_LOCATION=""
 
 ### SET DEFAULT VARIABLES
@@ -306,7 +306,7 @@ if [ $copyall ]; then
 
 #Copy everything from Scratch back
 cp * \$SLURM_SUBMIT_DIR 
-cp -r */plots \$SLURM_SUBMIT_DIR/$savedir
+cp -r */*plots \$SLURM_SUBMIT_DIR/$savedir
 EOT
 fi
 
