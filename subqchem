@@ -294,7 +294,7 @@ cp $infile $dir/*.mol .
 
 # Execute the program
 if [ "$copyall" = "yes" ] ; then
-\$QC/bin/qchem -save -np $nnodes $inname $outfile $savedir
+\$QC/bin/qchem -save -np $nnodes $inname $outfile 
 else
 \$QC/bin/qchem -np $nnodes $inname $outfile
 fi
@@ -306,7 +306,7 @@ if [ $copyall ]; then
 
 #Copy everything from Scratch back
 cp * \$SLURM_SUBMIT_DIR 
-cp -r */*plots \$SLURM_SUBMIT_DIR/$savedir
+cp -r $outfile.plots \$SLURM_SUBMIT_DIR/$savedir
 EOT
 fi
 
