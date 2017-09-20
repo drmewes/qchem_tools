@@ -66,7 +66,7 @@ if [ ! $quiet ]
 		echo "Y: $ymin to $ymax" 
 		echo "Z: $zmin to $zmax" 
 		echo
-		echo "Creating a box 1.5 A larger on any side with a 1/10 A grid..."
+		echo "Creating a box 1.5 A larger on any side with a 1/16 A grid..."
 fi
 		boxxmin=$(echo "scale=2 ; ($xmin-1.5)/1" | bc)
 		boxxmax=$(echo "scale=2 ; ($xmax+1.5)/1" | bc)
@@ -74,9 +74,9 @@ fi
 		boxymax=$(echo "scale=2 ; ($ymax+1.5)/1" | bc)
 		boxzmin=$(echo "scale=2 ; ($zmin-1.5)/1" | bc)
 		boxzmax=$(echo "scale=2 ; ($zmax+1.5)/1" | bc)
-		xgrid=$(echo "($xmax-($xmin))/0.1" | bc)
-		ygrid=$(echo "($ymax-($ymin))/0.1" | bc)
-		zgrid=$(echo "($zmax-($zmin))/0.1" | bc)
+		xgrid=$(echo "($xmax-($xmin))/0.0625" | bc)
+		ygrid=$(echo "($ymax-($ymin))/0.0625" | bc)
+		zgrid=$(echo "($zmax-($zmin))/0.0625" | bc)
 		[ ! $quiet ] && echo "... and writing it, for your convenience, in Q-Chem %plot format:" ; echo 
 		echo "\$plots"
 		echo "att. det. elec. hole and diff. density for the lowest two states"
