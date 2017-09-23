@@ -34,7 +34,7 @@ out=load_all_plt.vmd
 plot=plot_all.vmd
 conv=convert.bash
 html=vmd_plots.html
-ncol=5
+ncol=3
 ###
 
 echo 'USAGE: '$0' [<# surfaces(2/3), STD = 3 >] [<high iso,
@@ -101,31 +101,33 @@ echo "material change diffuse Ghost 0.000000" >> $out
 echo "material change ambient Ghost 0.300000" >> $out
 echo "material change opacity Ghost 0.100000" >> $out
 echo "material change shininess Ghost 0.000000" >> $out
-echo "mol modstyle 0 0 Licorice 0.200000 50.000000 50.000000" >> $out
+echo "mol modstyle 0 0 DynamicBonds 1.600000 0.200000 42.000000" >> $out
+echo "mol addrep 0" >> $out
+echo "mol modstyle 1 0 VDW 0.200000 42.000000" >> $out 
 echo "mol addrep 0" >> $out
 echo "mol addrep 0" >> $out
 echo "mol addrep 0" >> $out
 echo "mol addrep 0" >> $out
 echo "mol addrep 0" >> $out
 echo "mol addrep 0" >> $out
-echo "mol modmaterial 1 0 Opaque" >> $out
 echo "mol modmaterial 2 0 Opaque" >> $out
-echo "mol modmaterial 3 0 Glass3" >> $out
+echo "mol modmaterial 3 0 Opaque" >> $out
 echo "mol modmaterial 4 0 Glass3" >> $out
-echo "mol modmaterial 5 0 Ghost" >> $out
+echo "mol modmaterial 5 0 Glass3" >> $out
 echo "mol modmaterial 6 0 Ghost" >> $out
-echo "mol modstyle 1 0 Isosurface  $isov 0 0 0 1 1" >> $out
-echo "mol modstyle 2 0 Isosurface -$isov 0 0 0 1 1" >> $out
-echo "mol modstyle 3 0 Isosurface  $isov2 0 0 0 1 1" >> $out
-echo "mol modstyle 4 0 Isosurface -$isov2 0 0 0 1 1" >> $out
-echo "mol modstyle 5 0 Isosurface  $isov3 0 0 0 1 1" >> $out
-echo "mol modstyle 6 0 Isosurface -$isov3 0 0 0 1 1" >> $out
-echo "mol modcolor 1 0 ColorID 0" >> $out
-echo "mol modcolor 2 0 ColorID 1" >> $out
-echo "mol modcolor 3 0 ColorID 0" >> $out
-echo "mol modcolor 4 0 ColorID 1" >> $out
-echo "mol modcolor 5 0 ColorID 0" >> $out
-echo "mol modcolor 6 0 ColorID 1" >> $out
+echo "mol modmaterial 7 0 Ghost" >> $out
+echo "mol modstyle 2 0 Isosurface  $isov 0 0 0 1 1" >> $out
+echo "mol modstyle 3 0 Isosurface -$isov 0 0 0 1 1" >> $out
+echo "mol modstyle 4 0 Isosurface  $isov2 0 0 0 1 1" >> $out
+echo "mol modstyle 5 0 Isosurface -$isov2 0 0 0 1 1" >> $out
+echo "mol modstyle 6 0 Isosurface  $isov3 0 0 0 1 1" >> $out
+echo "mol modstyle 7 0 Isosurface -$isov3 0 0 0 1 1" >> $out
+echo "mol modcolor 2 0 ColorID 0" >> $out
+echo "mol modcolor 3 0 ColorID 1" >> $out
+echo "mol modcolor 4 0 ColorID 0" >> $out
+echo "mol modcolor 5 0 ColorID 1" >> $out
+echo "mol modcolor 6 0 ColorID 0" >> $out
+echo "mol modcolor 7 0 ColorID 1" >> $out
 echo "" > $plot
 
 echo "#!/bin/bash" > $conv
@@ -137,33 +139,33 @@ echo -e "<table>\n<tr>" >> $html
 N=0
 for I in *$ifmt
  do echo "mol addfile $I" >> $out
-    echo "mol modstyle 1 0 Isosurface  $isov $N 0 0 1 1" >> $plot
-    echo "mol modstyle 2 0 Isosurface -$isov $N 0 0 1 1" >> $plot
-    echo "mol modstyle 3 0 Isosurface  $isov2 $N 0 0 1 1" >> $plot
-    echo "mol modstyle 4 0 Isosurface -$isov2 $N 0 0 1 1" >> $plot
-    echo "mol modstyle 5 0 Isosurface  $isov3 $N 0 0 1 1" >> $plot
-    echo "mol modstyle 6 0 Isosurface -$isov3 $N 0 0 1 1" >> $plot
+    echo "mol modstyle 2 0 Isosurface  $isov $N 0 0 1 1" >> $plot
+    echo "mol modstyle 3 0 Isosurface -$isov $N 0 0 1 1" >> $plot
+    echo "mol modstyle 4 0 Isosurface  $isov2 $N 0 0 1 1" >> $plot
+    echo "mol modstyle 5 0 Isosurface -$isov2 $N 0 0 1 1" >> $plot
+    echo "mol modstyle 6 0 Isosurface  $isov3 $N 0 0 1 1" >> $plot
+    echo "mol modstyle 7 0 Isosurface -$isov3 $N 0 0 1 1" >> $plot
     if [ `echo $I | grep 'att'` ] || [ `echo $I | grep 'elec'` ]
-   then echo "mol modcolor 1 0 ColorID 1" >> $plot
-        echo "mol modcolor 2 0 ColorID 1" >> $plot
+   then echo "mol modcolor 2 0 ColorID 1" >> $plot
         echo "mol modcolor 3 0 ColorID 1" >> $plot
         echo "mol modcolor 4 0 ColorID 1" >> $plot
         echo "mol modcolor 5 0 ColorID 1" >> $plot
         echo "mol modcolor 6 0 ColorID 1" >> $plot
+        echo "mol modcolor 7 0 ColorID 1" >> $plot
     elif [ `echo $I | grep 'det'` ] || [ `echo $I | grep 'hole'` ]
-   then echo "mol modcolor 1 0 ColorID 0" >> $plot
-        echo "mol modcolor 2 0 ColorID 0" >> $plot
+   then echo "mol modcolor 2 0 ColorID 0" >> $plot
         echo "mol modcolor 3 0 ColorID 0" >> $plot
         echo "mol modcolor 4 0 ColorID 0" >> $plot
         echo "mol modcolor 5 0 ColorID 0" >> $plot
         echo "mol modcolor 6 0 ColorID 0" >> $plot
+        echo "mol modcolor 7 0 ColorID 0" >> $plot
     else
-        echo "mol modcolor 1 0 ColorID 1" >> $plot
-        echo "mol modcolor 2 0 ColorID 0" >> $plot
-        echo "mol modcolor 3 0 ColorID 1" >> $plot
-        echo "mol modcolor 4 0 ColorID 0" >> $plot
-        echo "mol modcolor 5 0 ColorID 1" >> $plot
-        echo "mol modcolor 6 0 ColorID 0" >> $plot
+        echo "mol modcolor 2 0 ColorID 1" >> $plot
+        echo "mol modcolor 3 0 ColorID 0" >> $plot
+        echo "mol modcolor 4 0 ColorID 1" >> $plot
+        echo "mol modcolor 5 0 ColorID 0" >> $plot
+        echo "mol modcolor 6 0 ColorID 1" >> $plot
+        echo "mol modcolor 7 0 ColorID 0" >> $plot
     fi
     echo "render TachyonInternal $I.$ofmt" >> $plot
 
