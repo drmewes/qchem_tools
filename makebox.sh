@@ -9,20 +9,32 @@ zmin=1000
 zmax=-1000
 natoms=0
 quiet=""
+qual=$2
+[ $3 ] && qual=$3
 mode=$2
+spacing=0.0625
 
 if [ $mode ] && [ $mode = nobla ]
  then quiet=true
 fi 
+
+#low quality mode for non-publication stuff. Coarse 0.1 A grid
+if [ $qual ] && [ $qual = low ]
+ then spacing=0.1
+fi
+
 
 if [ ! $quiet ]
 then echo "### Q-CHEM PLOTBOXMAKER V1.0 ###"
 	 echo 
 	 echo "Usage: 1st argument output file (has to be an optimization)"
 	 echo "       2nd optional argument \"nobla\": only output %plots section"
+	 echo "       3rd optional argument \"low\"  : use low quality mode for smaller files"
 	 echo 
  	 echo "Now boxing $1..."
 fi 
+
+file=$(basename $1)
 
 for i in $1 
 	do if [ $(cat $1 | grep -c "OPTIMIZATION CONVERGED") -eq 1 ]
@@ -74,12 +86,12 @@ fi
 		boxymax=$(echo "scale=2 ; ($ymax+1.5)/1" | bc)
 		boxzmin=$(echo "scale=2 ; ($zmin-1.5)/1" | bc)
 		boxzmax=$(echo "scale=2 ; ($zmax+1.5)/1" | bc)
-		xgrid=$(echo "($xmax-($xmin))/0.0625" | bc)
-		ygrid=$(echo "($ymax-($ymin))/0.0625" | bc)
-		zgrid=$(echo "($zmax-($zmin))/0.0625" | bc)
+		xgrid=$(echo "($xmax-($xmin))/$spacing" | bc)
+		ygrid=$(echo "($ymax-($ymin))/$spacing" | bc)
+		zgrid=$(echo "($zmax-($zmin))/$spacing" | bc)
 		[ ! $quiet ] && echo "... and writing it, for your convenience, in Q-Chem %plot format:" ; echo 
 		echo "\$plots"
-		echo "att. det. elec. hole and diff. density for the lowest two states"
+		echo "att. det. elec. hole and diff. dens for $file"
 		echo "$xgrid $boxxmin $boxxmax"
 		echo "$ygrid $boxymin $boxymax"
 		echo "$zgrid $boxzmin $boxzmax"
@@ -87,7 +99,7 @@ fi
 		echo "1 2"
 		echo "\$end"
 		echo 
-		echo "### All done, sweetas!"
+		[ ! $quiet ] && echo "### All done, sweetas!"
 
 		else echo "Optimization not converged, exiting"
 	fi

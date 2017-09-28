@@ -1,7 +1,7 @@
 #!/bin/bash
 
 	echo -e "Solv \tFosc. \t\tFluoresc \tPhospor \t dE(ST) \tE S1 \t\t\tE T1 \t\t\tdDip. \t\tDip. S1\t\tDip. T1"
-for i in tda vac chx tol eth dcm 
+for i in tda vac chx tol eth dcm acn 
 	do soutfile=$(echo s1ems.adc2.$i.out) ; toutfile=$(echo t1ems.adc2.$i.out)
 	if [ -e $soutfile ] 
 		then

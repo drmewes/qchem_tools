@@ -7,12 +7,6 @@ natoms=0
 quiet=""
 otherout=$2
 
-if [ $otherout ] && [ -n $otherout ]
- then output=$otherout
- echo "Using non default outputfile $output"
- else echo  "Using default outputfile $output"
-fi 
-
 if [ ! $quiet ]
 then echo "### Q-CHEM OPTIMIZED XYZ MAKER V1.0 ###"
 	 echo 
@@ -21,6 +15,14 @@ then echo "### Q-CHEM OPTIMIZED XYZ MAKER V1.0 ###"
 	 echo 
  	 echo "Now doing $1..."
 fi 
+
+if [ $1 ] ; then
+
+if [ $otherout ] && [ -n $otherout ]
+ then output=$otherout
+ echo "... using non default outputfile $output"
+ else echo  "Using default outputfile $output"
+fi
 
 for i in $file
 	do if [ $(cat $1 | grep -c "OPTIMIZATION CONVERGED") -eq 1 ]
@@ -43,4 +45,31 @@ for i in $file
 	fi
 done
 
+else
 
+echo "No additional input parameters provided, doing all .out files in folder... "
+
+for i in *out ; do  
+        echo "... now doing $i"
+	output=$(echo $i | sed s/out/xyz/)
+	if [ $(cat $1 | grep -c "OPTIMIZATION CONVERGED") -eq 1 ]
+                then natoms=$(grep "NAtoms," $i -A1 | tail -n1 | awk '{print $1}')
+                nlines=$((natoms+4))
+                [ ! $quiet ] && echo "Found $natoms atoms..."
+
+                if [ -e $output ]
+                        then cp $output "$output"_bkup
+                        echo "Desired output file already exists, backing up..."
+                fi
+
+                echo "$natoms" > $output
+                grep "Final energy is" $i >> $output
+                grep "OPTIMIZATION CONVERGED" -A $nlines $i | tail -n $natoms | cut -c 10- >> $output
+
+                else echo "Optimization not converged, exiting"
+        fi
+done
+
+ [ ! $quiet ] && echo "### All done, sweetas!"
+
+fi
