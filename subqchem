@@ -292,6 +292,9 @@ export OMP_NUM_THREADS=$ncores
 cd \$SCRATCH
 cp $infile $dir/*.mol .
 
+# Backup old out file is existing 
+[ -e $outfile ] && cp $outfile ${outfile}_OLD
+
 # Execute the program
 if [ "$copyall" = "yes" ] ; then
 \$QC/bin/qchem -save -np $nnodes $inname $outfile $outname.plots
@@ -304,9 +307,9 @@ EOT
 if [ $copyall ]; then
     cat <<EOT >> $scriptfile
 
-#Copy everything from Scratch back
-cp \$SCRATCH/* \$SLURM_SUBMIT_DIR 
-cp -r \$SCRATCH$outfile.plots \$SLURM_SUBMIT_DIR/$savedir
+#Copy plots back from Scratch 
+cp -r \$SCRATCH/$outname.plots/plots \$SLURM_SUBMIT_DIR/$savedir
+
 EOT
 fi
 

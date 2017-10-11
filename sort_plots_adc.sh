@@ -10,12 +10,12 @@ mv *dens.cube STATE_DENS
 mv *trans.cube TRANS_DENS
 
 for i in singlet*_attach.cube 
-	do j=$(echo $i | sed "s/attach/sing_2att/" | sed s/singlet_//)
+	do j=$(echo $i | sed "s/attach/sing_4att/" | sed s/singlet_//)
 	mv $i $j 
 done
 
 for i in singlet*_detach.cube 
-	do j=$(echo $i | sed "s/detach/sing_4det/"| sed s/singlet_//)
+	do j=$(echo $i | sed "s/detach/sing_2det/"| sed s/singlet_//)
 	mv $i $j 
 done
 
@@ -35,12 +35,12 @@ for i in singlet*_hole.cube
 done
 
 for i in triplet*_attach.cube 
-	do j=$(echo $i | sed "s/attach/trip_2att/"| sed s/triplet_//)
+	do j=$(echo $i | sed "s/attach/trip_4att/"| sed s/triplet_//)
 	mv $i $j 
 done
 
 for i in triplet*_detach.cube 
-	do j=$(echo $i | sed "s/detach/trip_4det/"| sed s/triplet_//)
+	do j=$(echo $i | sed "s/detach/trip_2det/"| sed s/triplet_//)
 	mv $i $j 
 done
 
