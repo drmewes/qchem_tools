@@ -34,8 +34,10 @@ out=load_all_plt.vmd
 plot=plot_all.vmd
 conv=convert.bash
 html=vmd_plots.html
-ncol=3
+ncol=5
 ###
+
+
 
 echo 'USAGE: '$0' [<# surfaces(2/3), STD = 3 >] [<high iso,
 STD(2/3)=(0.1/0.128)>] [<iso_factor>]'

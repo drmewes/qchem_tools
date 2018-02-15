@@ -1,7 +1,7 @@
 #!/bin/bash
 
-	echo -e "Solv \tFosc. \t\tFluoresc \tPhospor \t dE(ST) \tE S1 \t\t\tE T1 \t\t\tdDip. \t\tDip. S1\t\tDip. T1"
-for i in tda vac chx tol eth dcm acn 
+	echo -e "Solv \tFosc. \t\tFluoresc \tPhospor \t dE(ST) \t Lambda \tE S1 \t\t\t E S1@T1 \t\t\tE T1 \t\t\tdDip. \t\tDip. S1\t\tDip. T1"
+for i in tda vac chx tol mcp eth dcm acn 
 	do soutfile=$(echo s1ems.adc2.$i.out) ; toutfile=$(echo t1ems.adc2.$i.out)
 	if [ -e $soutfile ] 
 		then
@@ -20,9 +20,11 @@ for i in tda vac chx tol eth dcm acn
 		DipT1=$(tac $toutfile | grep "Emission energy (PCM 1st order, incl. ptSS/GS):" -m 1 -C15 | grep "Total dipole" | awk '{print $4}')
 		EmsT1=$(tac $toutfile | grep "Emission energy (PCM 1st order, incl. ptSS/GS):" -m 1  | awk '{print $8}')
 		ET1=$(tac $toutfile | grep "Emission energy (PCM 1st order, incl. ptSS/GS):" -m 1 -C10 | grep "Total energy" | awk '{print $8}')
+		ES1_T1=$(tac $toutfile | grep "Emission energy (PCM 1st order, incl. ptSS/GS):" -m 1 -C500 | grep "Term symbol:  2 (1) A" -B20 | grep "Total energy (PCM 0th order):" -m 1  | awk '{print $6}')
 		dDip=$(echo "$DipS1 - $DipT1" | bc)
-		gap=$(echo "-($ES1-($ET1))*27.2114" | bc )
-		echo -e "$i $sconv $tconv\t$Osc\t$EmsS1\t$EmsT1\t$gap\t$ES1\t$ET1\t$dDip \t$DipS1\t$DipT1"
+		gap=$(echo "($ES1-($ET1))*27.2114" | bc )
+		lambda=$(echo "($ES1_T1-($ES1))*27.2114" | bc )
+		echo -e "$i $sconv $tconv\t$Osc\t$EmsS1\t$EmsT1\t$gap\t$lambda\t$ES1\t$ES1_T1\t$ET1\t$dDip\t$DipS1\t$DipT1"
 	else echo "" #$i calculation not yet started"
 	fi
 done 
