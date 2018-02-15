@@ -78,7 +78,8 @@ if [ ! $quiet ]
 		echo "Y: $ymin to $ymax" 
 		echo "Z: $zmin to $zmax" 
 		echo
-		echo "Creating a box 1.5 A larger on any side with a 1/16 A grid..."
+		echo "Creating a box 1.5 A larger than the molecule in every direction..."
+		[ $qual ] && [ $qual = low ] && echo "Using 1/10 A grid." || echo "Using 1/16 A grid."
 fi
 		boxxmin=$(echo "scale=2 ; ($xmin-1.5)/1" | bc)
 		boxxmax=$(echo "scale=2 ; ($xmax+1.5)/1" | bc)
