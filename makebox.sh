@@ -7,6 +7,7 @@ ymin=1000
 ymax=-1000
 zmin=1000
 zmax=-1000
+extra=2
 natoms=0
 quiet=""
 qual=$2
@@ -81,12 +82,12 @@ if [ ! $quiet ]
 		echo "Creating a box 1.5 A larger than the molecule in every direction..."
 		[ $qual ] && [ $qual = low ] && echo "Using 1/10 A grid." || echo "Using 1/16 A grid."
 fi
-		boxxmin=$(echo "scale=2 ; ($xmin-1.5)/1" | bc)
-		boxxmax=$(echo "scale=2 ; ($xmax+1.5)/1" | bc)
-		boxymin=$(echo "scale=2 ; ($ymin-1.5)/1" | bc)
-		boxymax=$(echo "scale=2 ; ($ymax+1.5)/1" | bc)
-		boxzmin=$(echo "scale=2 ; ($zmin-1.5)/1" | bc)
-		boxzmax=$(echo "scale=2 ; ($zmax+1.5)/1" | bc)
+		boxxmin=$(echo "scale=2 ; ($xmin-$extra)/1" | bc)
+		boxxmax=$(echo "scale=2 ; ($xmax+$extra)/1" | bc)
+		boxymin=$(echo "scale=2 ; ($ymin-$extra)/1" | bc)
+		boxymax=$(echo "scale=2 ; ($ymax+$extra)/1" | bc)
+		boxzmin=$(echo "scale=2 ; ($zmin-$extra)/1" | bc)
+		boxzmax=$(echo "scale=2 ; ($zmax+$extra)/1" | bc)
 		xgrid=$(echo "($xmax-($xmin))/$spacing" | bc)
 		ygrid=$(echo "($ymax-($ymin))/$spacing" | bc)
 		zgrid=$(echo "($zmax-($zmin))/$spacing" | bc)

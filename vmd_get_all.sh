@@ -34,7 +34,7 @@ out=load_all_plt.vmd
 plot=plot_all.vmd
 conv=convert.bash
 html=vmd_plots.html
-ncol=3
+ncol=5
 ###
 
 echo 'USAGE: '$0' [<# surfaces(2/3), STD = 3 >] [<high iso,
@@ -101,7 +101,7 @@ echo "material change diffuse Ghost 0.000000" >> $out
 echo "material change ambient Ghost 0.300000" >> $out
 echo "material change opacity Ghost 0.100000" >> $out
 echo "material change shininess Ghost 0.000000" >> $out
-echo "mol modstyle 0 0 DynamicBonds 1.600000 0.200000 42.000000" >> $out
+echo "mol modstyle 0 0 DynamicBonds 1.800000 0.200000 42.000000" >> $out
 echo "mol addrep 0" >> $out
 echo "mol modstyle 1 0 VDW 0.200000 42.000000" >> $out 
 echo "mol addrep 0" >> $out
