@@ -6,10 +6,10 @@ for i in *out
 	do if [ $(grep -o "Z-matrix" $i) ] 
 	then 
 		molfile=$(echo $i | sed 's/.out/.mol/')
-        if [ $(grep "Nuclear Repulsion Energy =  " -b2 $i | head -n 1 | awk '{print $2}') = "Molecular" ]
+        if [ $(grep "Nuclear Repulsion Energy =" -b2 $i | head -n 1 | awk '{print $2}') = "Molecular" ]
 		then echo "Symmetry detected" 
-		natoms=$(grep "Nuclear Repulsion Energy =  " -b4 $i | head -n 1 | awk '{print $2}')
-		else natoms=$(grep "Nuclear Repulsion Energy =  " -b2 $i | head -n 1 | awk '{print $2}')
+		natoms=$(grep "Nuclear Repulsion Energy =" -b4 $i | head -n 1 | awk '{print $2}')
+		else natoms=$(grep "Nuclear Repulsion Energy =" -b2 $i | head -n 1 | awk '{print $2}')
 	fi
         headlines=$((natoms+4))
 		taillines=$((natoms+3))

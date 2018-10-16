@@ -1,6 +1,6 @@
 #!/bin/bash
 
-	echo -e "Solv \tFosc. \t\tFluoresc \tPhospor \t dE(ST) \t Lambda \t Lambda2 \tE S1 \t\t\t E S1@T1 \t\t\t E T1 \t\t\t E T1@S1 \t\t\t dDip. \t\tDip. S1\t\tDip. T1"
+	echo -e "Solv \tFosc. \t\tFluoresc \tPhospor \t dE(ST) \t Lambda \t Lambda2 \t\t\t dDip. \t\tDip. S1\t\tDip. T1"
 for i in tda vac chx tol mcp eth dcm acn 
 	do soutfile=$(echo s1ems.adc2.$i.out) ; toutfile=$(echo t1ems.adc2.$i.out)
 	if [ -e $soutfile ] 
@@ -26,7 +26,7 @@ for i in tda vac chx tol mcp eth dcm acn
 		gap=$(echo "($ES1-($ET1))*27.2114" | bc )
 		lambda=$(echo "($ES1_T1-($ES1))*27.2114" | bc )
                 lambda2=$(echo "($ET1_S1-($ET1))*27.2114" | bc )
-		echo -e "$i $sconv $tconv\t$Osc\t$EmsS1\t$EmsT1\t$gap\t$lambda\t$lambda2\t$ES1\t$ES1_T1\t$ET1\t$ET1_S1\t$dDip\t$DipS1\t$DipT1"
+		echo -e "$i $sconv $tconv\t$Osc\t$EmsS1\t$EmsT1\t$gap\t$lambda\t$lambda2\t$dDip\t$DipS1\t$DipT1"
 	else echo "" #$i calculation not yet started"
 	fi
 done 

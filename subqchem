@@ -279,7 +279,7 @@ echo "The local scratch directory (located on the compute node) is:"
 echo "\$SCRATCH"
 echo ""
 
-module add q-chem/intel/QCHEM_5.1.0
+module add q-chem/intel/QCHEM_5.1.0_Trunk
 #module load openmpi/intel/64/1.10.4-i8 
 #module load intel/compiler/64/16.0.3/2016.3.210 
 #module load gcc/5.2.0
