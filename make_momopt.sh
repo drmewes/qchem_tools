@@ -6,7 +6,7 @@ nelec=0
 if [ $(grep -o "Z-matrix" gsopt.out) ] ; then 
 
 mkdir MOM_OPT
-cp /data/mewes/CALC/TADF/MOM_OPT/*in MOM_OPT
+cp /data/mewes/CALC/TADF/MOM_OPT/*1*in MOM_OPT
 
 nelec=$(grep electrons gsopt.out -m1 | awk '{print $3}') 
 alpha=$(seq -s " " $((nelec+1)) | sed "s/$nelec//")
@@ -17,8 +17,8 @@ for i in MOM_OPT/moms1opt*in ; do
 	sed -i "s/VIRT/$beta/" $i 
 done
 
-cp gsopt.mol MOM_OPT/incoords.mol 
-sed "s/^0 1$/0 3/" gsopt.mol > MOM_OPT/uincoords.mol
+cp s1opt.mol MOM_OPT/incoords.mol 
+sed "s/^0 1$/0 3/" s1opt.mol > MOM_OPT/uincoords.mol
 
 cd MOM_OPT
 

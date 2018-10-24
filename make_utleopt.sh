@@ -7,11 +7,11 @@ if [ $(grep -o "Z-matrix" t1opt.out) ] ; then
 
 cp /data/mewes/CALC/TADF/MOM_OPT/utleopt*in MOM_OPT
 
-sed "s/^0 1$/0 3/" t1opt.mol > MOM_OPT/uincoords.mol
+sed "s/^0 1$/0 3/" t1opt.mol > MOM_OPT/utLEincoords.mol
 
 cd MOM_OPT
 
-for i in tleopt*in ; do 
+for i in utleopt*in ; do 
  subqchem_old $i 
 done
 
