@@ -22,7 +22,7 @@ if [ "$1" = "sub" ] ; then
 	echo "Found flag to submit jobs, submitting now..."
 	cd TRANSPROP
 	for i in *in ; do 
- 		subqchem_old $i 
+ 		subqchem $i 
 	done
 	cd -
 	echo "All done!"
