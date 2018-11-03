@@ -9,7 +9,7 @@ BINARY_LOCATION=""
 
 ncores_default=8
 nnodes_default=1
-jobtime_default=12
+jobtime_default=72
 #memory=2
 
 
@@ -115,7 +115,7 @@ fi
 
 ### CREATE DEFAULT JOBNAME
 
-jobname_default="`echo $dir.$myname | sed "s/\/home\/$USER\/CALC\///; s/\//./g"`"
+jobname_default="`echo $dir | sed "s/\/data\/$USER\//d/" | sed "s/\/home\/$USER\//h/ ; s/\//./g"`.$myname"
 
 ### PROCESS VARIABLES
 
