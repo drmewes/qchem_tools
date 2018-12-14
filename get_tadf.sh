@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#this is a comment
+
 	echo -e "Solv \tFosc. \t\tFluoresc \tPhospor \t dE(ST) \t Lambda \t Lambda2 \tE S1 \t\t\t E S1@T1 \t\t\t E T1 \t\t\t E T1@S1 \t\t\t dDip. \t\tDip. S1\t\tDip. T1"
 for i in tda vac chx tol mcp eth dcm acn 
 	do soutfile=$(echo s1ems.adc2.$i.out) ; toutfile=$(echo t1ems.adc2.$i.out)
