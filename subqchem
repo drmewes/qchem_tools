@@ -7,16 +7,16 @@ BINARY_LOCATION=""
 
 ### SET DEFAULT VARIABLES
 
-ncores_default=8
+ncores_default=2
 nnodes_default=1
-jobtime_default=72
+jobtime_default=240
 #memory=2
-
 
 jobhold=""
 holdid=""
 debug=""
 queue=""
+user=mewes
 
 function usage
 {
@@ -129,7 +129,7 @@ if [ -z "$nnodes" ]; then
    nnodes=$nnodes_default
 fi
 if [ -z "$memory" ]; then
-   memory=2
+   memory=8 
 fi
 if [ -z "$jobtime" ]; then
    jobtime=$jobtime_default
@@ -207,30 +207,38 @@ fi
 if [ -z "$queue" ]; then
 
     if [ "$jobtime" -le 2  ]; then
-        queue="test"
+        queue="batch"
     elif [ "$jobtime" -gt 2 ] && [ "$jobtime" -le 72 ]; then
-        queue="short"
+        queue="batch"
     elif [ "$jobtime" -gt 72 ]; then
-        queue="long"
+        queue="batch"
     fi
 fi
 
 
 ## GET MAIL
 
-mail=`cat /home/${USER}/.forward`
+#mail=`cat /home/${USER}/.forward`
 
 ### set %mem and %nproc according to qsub
 
-cp $infile submitfile
+echo "Trying to figure out ncores and memory from infile..."
+if grep --ignore-case threads $infile ; then
+    coreset=`grep -m 1 --ignore-case threads $infile | awk '{print $2}'`
+    ncores=$coreset
+    echo "Found threads and setting ncores accordingly"
+    else echo "Threads not found, using ncores=$ncores from command-line/default"
+fi
 
-memset=`grep --ignore-case %maxcore submitfile`
-coreset=`grep --ignore-case %pal submitfile`
+echo ""
 
-memoryMB=$((${memory}*1000))
-
-mv submitfile $infile
-
+if grep --ignore-case mem_total $infile ; then
+    memset=`grep -m 1 --ignore-case mem_total $infile | awk '{print $2}'`
+    memory=$(echo "$memset/1000+2" | bc)
+    echo "Found mem_total and setting memory accordingly."
+    else echo "mem_total not found, using memory=$memory from command-line/default"
+fi
+echo "" 
 ### CREATE OPTION STRING FOR QSUB
 
 if [ -z "$jobhold" ]; then
@@ -242,68 +250,57 @@ fi
 
 inname=$(basename $infile)
 outname=$(basename $outfile)
+pbs_logfile=$(echo $inname | sed "s/.in/.pbslog/")
+pbs_errorfile=$(echo $inname | sed "s/.in/.pbserr/")
+#echo pbs_outname $pbs_outname pbs_errorname $pbs_errorname
 scriptname=$(basename $scriptfile)
 savedir=$(echo $outname | sed "s/.out/_files/")
 
-### ADJUST TIME AND CHANGE INTO DAYS, HOURS
-
-days=$(bc <<< "$jobtime/24")
-hours=$(bc <<< "$jobtime-($days*24)")
+#somehow this takes the last 19 characters of the jobname
+jobident=$(echo $jobnamefix | sed 's/.*\(...................\)/\1/')
 
 ### CREATE INPUT SCRIPT FOR QSUB
-test -e $scriptfile && mv $scriptfile $scriptfile-OLD
+test -e $scriptfile && mv $scriptfile ${scriptfile}_OLD
 
 cat <<EOT >> $scriptfile
 #!/bin/bash
 
-#SBATCH --job-name=$jobnamefix
-#SBATCH -t $days-$hours:00
-#SBATCH -n $ncores
-#SBATCH -N $nnodes
-#SBATCH --mem-per-cpu=${memory}G
-#SBATCH --mail-type=END
-#SBATCH --mail-type=FAIL
-#SBATCH -o /home/${USER}/err/qchem-%j
-#SBATCH --mail-user=$mail
-#SBATCH -p $queue
+# PBS Job
+#PBS -V
+#PBS -N $jobident
+#PBS -m ae
+#PBS -q $queue
+#PBS -l nodes=1:ppn=$ncores
+#PBS -l walltime=$jobtime:0:0
+#PBS -l mem=${memory}G
+#PBS -o $pbs_logfile
+#PBS -e $pbs_errorfile
 
-echo "This job was submitted from the computer:"
-echo "\$SLURM_SUBMIT_HOST"
-echo "and the directory:"
-echo "\$SLURM_SUBMIT_DIR"
-echo ""
-echo "It is running on the compute node:"
-echo "\$SLURM_CLUSTER_NAME"
+
+echo "Job is running on the compute node:"
+echo "\$PBS_NODEFILE"
 echo ""
 echo "The local scratch directory (located on the compute node) is:"
-echo "\$SCRATCH"
+echo "/tmp1/$user/"
 echo ""
 
-module unload *
-module add q-chem/intel/QCHEM_5.1.0_Trunk
-#module load openmpi/intel/64/1.10.4-i8 
-#module load intel/compiler/64/16.0.3/2016.3.210 
-#module load gcc/5.2.0
-#module load intel/mkl/64/11.3.3/2016.3.210
-#export QC=/home/mewes/SOFTWARE/QCHEM_5
-#export QCAUX=/home/mewes/SOFTWARE/QCHEM_AUX_5.0.2
-export QCSCRATCH=\$SCRATCH
+export QC=/home/mewes/SOFTWARE/QC54_TRUNK
+export QCAUX=/home/mewes/SOFTWARE/QC_AUX
+export QCSCRATCH=/tmp1/$user/
 export QCPLATFORM=LINUX_Ix86
-#xport QCTHREADS=$ncores
-#xport OMP_NUM_THREADS=$ncores
 
-# Go into Scratch
-cd \$SCRATCH
-cp $infile $dir/*.mol .
+cd 
 
-# Backup old out file is existing 
+# Backup old out files if existing 
+[ -e ${outfile}_OLD ] && cp $outfile ${outfile}_OLDER
 [ -e $outfile ] && cp $outfile ${outfile}_OLD
 
+cd $dir
 # Execute the program
 if [ "$copyall" = "yes" ] ; then
-\$QC/bin/qchem -save $inname $outfile $outname.plots
+\$QC/bin/qchem -save $inname $outname $savedir
 else
-\$QC/bin/qchem $inname $outfile
+\$QC/bin/qchem $inname $outname
 fi
 
 EOT
@@ -312,29 +309,25 @@ if [ $copyall ]; then
     cat <<EOT >> $scriptfile
 
 #Copy plots back from Scratch 
-cp -r \$SCRATCH/$outname.plots/plots \$SLURM_SUBMIT_DIR/$savedir
+cp -r /tmp1/$user/$savedir/plots . 
 
 EOT
 fi
 
 
-
 if [ -z $debug ]; then
-   sbatch $optionstring $scriptfile
-   #rm $scriptfile
-
    cat <<EOT
-
-Job has been submitted.
-Name: $inname, #CPU: $ncores, #Nodes: $nnodes, mem: ${memory}GB.
+Submitting job with settings:
+Name: $jobident, #CPU: $ncores, #Nodes: $nnodes, mem: ${memory}GB.
 EOT
+   qsub $optionstring $scriptfile
 
 else
    cat <<EOT
 
-Job has been created. Submit file will be saved. 
+Submit file created but not submitted. 
 Name: $inname, #CPU: $ncores, #Nodes: $nnodes, mem: ${memory}GB.
-Submit with sbatch $scriptname!
+Submit with qsub $scriptname!
 EOT
 fi 
 
