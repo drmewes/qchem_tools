@@ -27,7 +27,7 @@ except ModuleNotFoundError:
 
 
 save = True
-save_loc = os.path.join(os.path.dirname(os.path.realpath(".")), "data.csv")
+save_loc = os.path.join(os.path.realpath("."), "data.csv")
 
 
 def main():
