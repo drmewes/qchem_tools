@@ -1,4 +1,10 @@
 #!/bin/env python3
+# coding: utf-8
+
+# HOW IT WORKS:
+# Searches recursively in current directory for all *.out files.
+# Creates data.csv in current directory (if pandas available)
+
 import glob
 import os
 import sys
@@ -7,9 +13,22 @@ try:
   import pandas as pd
   is_pandas = True
 except ModuleNotFoundError:
-  print("Module 'pandas' not found. Skipping related parts.")
+  print("Module 'pandas' not found. Trying to use numpy...")
   is_pandas = False
 
+  # fallback: using numpy for saving data to csv
+  try:
+    import numpy as np
+    is_numpy = True
+  except ModuleNotFoundError:
+    print("Module 'numpy' not found. Data will not be saved.")
+    is_numpy = False
+
+
+
+
+save = True
+save_loc = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data.csv")
 
 
 def main():
@@ -18,8 +37,6 @@ def main():
   for filename in getFileList():
     rem = False
     rem_dict = {}
-    walltime = 0
-    energy = 0
 
     with open(filename, errors='ignore') as f:
       for i, line in enumerate(f):
@@ -54,11 +71,10 @@ def main():
           data.append([filename, rem_dict["jobtype"], rem_dict["method"], rem_dict["basis"], rem_dict["omega"], energy, nbas, walltime, rem_dict["threads"]])
 
           
-
+  # data collection out of loop
   cols = ["file", "jobtype",  "method", "basis", "omega", "energy", "nbas", "time", "threads"]
   if is_pandas == True:
-    # out of loop, create dataframe
-    df = pd.DataFrame(columns=cols,data=data)
+    df = pd.DataFrame(columns=cols, data=data)
 
     # assign data types
     df["omega"] = pd.to_numeric(df["omega"])
@@ -66,11 +82,23 @@ def main():
     df["nbas"] = pd.to_numeric(df["nbas"])
     df["time"] = pd.to_numeric(df["time"])
 
-    #df.to_csv("data.csv", index=False)
+    if save == True and save_loc:
+      df.to_csv(save_loc, index=False)
+      print("Saved data to {}.".format(save_loc))
+
+    print("")
     print(df)
-    print("total time", df["time"].sum())
   else:
-    print(' '.join(str(x) for x in cols))
+    # add col names to list
+    data.insert(0, cols)
+
+    if is_numpy and save and save_loc:
+      np.savetxt(save_loc, data, fmt='%s', delimiter="\t")
+      print("Saved data to {}.".format(save_loc))
+    else:
+      print("Saving failed.")
+
+    print("")
     print('\n'.join(' '.join(str(x) for x in row) for row in data))
 
 

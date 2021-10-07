@@ -1,0 +1,9 @@
+file,jobtype,method,basis,omega,energy,nbas,time,threads
+./tests/multijob.out,sp,lc-wPBE08,def2-tzvpp,100,-392.7199247908,590,864.0,1
+./tests/multijob.out,sp,lc-wPBE08,def2-tzvpp,150,-392.7634068547,590,550.0,1
+./tests/multijob.out,sp,lc-wPBE08,def2-tzvpp,200,-392.8139412298,590,558.0,1
+./tests/multijob.out,sp,lc-wPBE08,def2-tzvpp,250,-392.8652188435,590,558.0,1
+./tests/multijob.out,sp,lc-wPBE08,def2-tzvpp,300,-392.9129978275,590,570.0,1
+./tests/multijob.out,sp,lc-wPBE08,def2-tzvpp,350,-392.9546607288,590,543.0,1
+./tests/multijob.out,sp,lc-wPBE08,def2-tzvpp,400,-392.9888383428,590,505.0,1
+./tests/multijob.out,sp,lc-wPBE08,def2-tzvpp,450,-393.0151042179,590,497.0,1
