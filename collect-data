@@ -1,0 +1,95 @@
+#!/bin/env python3
+import glob
+import os
+import sys
+
+try:
+  import pandas as pd
+  is_pandas = True
+except ModuleNotFoundError:
+  print("Module 'pandas' not found. Skipping related parts.")
+  is_pandas = False
+
+
+
+def main():
+  data = []
+
+  for filename in getFileList():
+    rem = False
+    rem_dict = {}
+    walltime = 0
+    energy = 0
+
+    with open(filename, errors='ignore') as f:
+      for i, line in enumerate(f):
+
+        # only entered if previous line was start of rem block
+        if rem == True:
+          # turn false again if end encountered, otherwise do stuff
+          if line.startswith("$end"):
+            rem = False
+          else:
+            rem_dict[line.strip().split()[0]] = line.strip().split()[1]
+
+
+        # turns true if rem block is hit
+        if line.startswith("$rem"): 
+          rem = True
+          continue
+
+
+        if "shells" in line and "basis functions" in line:
+          nbas = line.split("shells and")[1].split("basis functions")[0].strip()
+
+
+        if line.startswith(" SCF time:   CPU"):
+          walltime = line.split("wall")[1].strip()
+          walltime = walltime[:-1]
+
+
+        # append data in line furthest down
+        if " Total energy in the final basis set =" in line:
+          energy = line.split("=")[1].strip()
+          data.append([filename, rem_dict["jobtype"], rem_dict["method"], rem_dict["basis"], rem_dict["omega"], energy, nbas, walltime, rem_dict["threads"]])
+
+          
+
+  cols = ["file", "jobtype",  "method", "basis", "omega", "energy", "nbas", "time", "threads"]
+  if is_pandas == True:
+    # out of loop, create dataframe
+    df = pd.DataFrame(columns=cols,data=data)
+
+    # assign data types
+    df["omega"] = pd.to_numeric(df["omega"])
+    df["energy"] = pd.to_numeric(df["energy"])
+    df["nbas"] = pd.to_numeric(df["nbas"])
+    df["time"] = pd.to_numeric(df["time"])
+
+    #df.to_csv("data.csv", index=False)
+    print(df)
+    print("total time", df["time"].sum())
+  else:
+    print(' '.join(str(x) for x in cols))
+    print('\n'.join(' '.join(str(x) for x in row) for row in data))
+
+
+def getFileList():
+  filelist = []
+  try:
+    for file in glob.glob('./**/*.out', recursive=True):
+      if file.endswith(".out"):
+        filelist.append(file)
+
+    if len(filelist) == 0:
+      print("No files found.", filelist)
+      sys.exit()
+
+    return filelist
+  except Exception as e:
+    print(e)
+    sys.exit()
+
+
+if __name__ == '__main__':
+  main()
