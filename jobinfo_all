@@ -69,8 +69,11 @@ def main():
           energy = line.split("=")[1].strip()
           data.append([filename, rem_dict["jobtype"], rem_dict["method"], rem_dict["basis"], rem_dict["omega"], energy, nbas, walltime, rem_dict["threads"]])
 
-          
-  # data collection out of loop
+
+  ########################################      
+  ## data collection (outside of loop!) ##
+  ########################################
+
   cols = ["file", "jobtype",  "method", "basis", "omega", "energy", "nbas", "time", "threads"]
   if is_pandas == True:
     df = pd.DataFrame(columns=cols, data=data)
