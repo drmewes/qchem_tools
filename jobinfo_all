@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+# coding: utf-8
+
+# HOW IT WORKS:
+# Searches recursively in current directory for all *.out files.
+# Creates data.csv in current directory (if pandas available)
+
+import glob
+import os
+import sys
+
+try:
+  import pandas as pd
+  is_pandas = True
+except ModuleNotFoundError:
+  print("Module 'pandas' not found. Trying to use numpy...")
+  is_pandas = False
+
+  # fallback: using numpy for saving data to csv
+  try:
+    import numpy as np
+    is_numpy = True
+  except ModuleNotFoundError:
+    print("Module 'numpy' not found. Data will not be saved.")
+    is_numpy = False
+
+
+
+save = True
+save_loc = os.path.join(os.path.realpath("."), "data.csv")
+
+
+def main():
+  data = []
+
+  for filename in getFileList():
+    rem = False
+    rem_dict = {}
+
+    with open(filename, errors='ignore') as f:
+      for i, line in enumerate(f):
+
+        # only entered if previous line was start of rem block
+        if rem == True:
+          # turn false again if end encountered, otherwise do stuff
+          if line.startswith("$end"):
+            rem = False
+          else:
+            rem_dict[line.strip().split()[0]] = line.strip().split()[1]
+
+
+        # turns true if rem block is hit
+        if line.startswith("$rem"): 
+          rem = True
+          continue
+
+
+        if "shells" in line and "basis functions" in line:
+          nbas = line.split("shells and")[1].split("basis functions")[0].strip()
+
+
+        if line.startswith(" SCF time:   CPU"):
+          walltime = line.split("wall")[1].strip()
+          walltime = walltime[:-1]
+
+
+        # append data in line furthest down
+        if " Total energy in the final basis set =" in line:
+          energy = line.split("=")[1].strip()
+          data.append([filename, rem_dict["jobtype"], rem_dict["method"], rem_dict["basis"], rem_dict["omega"], energy, nbas, walltime, rem_dict["threads"]])
+
+
+  ########################################      
+  ## data collection (outside of loop!) ##
+  ########################################
+
+  cols = ["file", "jobtype",  "method", "basis", "omega", "energy", "nbas", "time", "threads"]
+  if is_pandas == True:
+    df = pd.DataFrame(columns=cols, data=data)
+
+    # assign data types
+    df["omega"] = pd.to_numeric(df["omega"])
+    df["energy"] = pd.to_numeric(df["energy"])
+    df["nbas"] = pd.to_numeric(df["nbas"])
+    df["time"] = pd.to_numeric(df["time"])
+
+    if save == True and save_loc:
+      df.to_csv(save_loc, index=False)
+      print("Saved data to {}.".format(save_loc))
+
+    print("")
+    print(df)
+  else:
+    # add col names to list
+    data.insert(0, cols)
+
+    if is_numpy and save and save_loc:
+      np.savetxt(save_loc, data, fmt='%s', delimiter="\t")
+      print("Saved data to {}.".format(save_loc))
+    else:
+      print("Saving failed.")
+
+    print("")
+    print('\n'.join(' '.join(str(x) for x in row) for row in data))
+
+
+def getFileList():
+  filelist = []
+  try:
+    for file in glob.glob('./**/*.out', recursive=True):
+      if file.endswith(".out"):
+        filelist.append(file)
+
+    if len(filelist) == 0:
+      print("No files found.", filelist)
+      sys.exit()
+
+    return filelist
+  except Exception as e:
+    print(e)
+    sys.exit()
+
+
+if __name__ == '__main__':
+  main()
