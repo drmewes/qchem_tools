@@ -1,6 +1,6 @@
 #!/bin/bash
 
-dir=`pwd`
+dir=$(pwd)
 PGM_NAME="subqchem submit script"
 PGM_VERSION="1.1"
 BINARY_LOCATION=""
@@ -16,132 +16,139 @@ jobhold=""
 holdid=""
 debug=""
 queue=""
-user=mewes
+user=$USER
 
-function usage
-{
-    cat <<-EOF
+function usage {
+  cat <<-EOF
 $PGM_NAME $PGM_VERSION
 Usage: $PGM_NAME [-j JOB_ID] [-t TIME]  [-m SIZE] [-N NAME] [-p CPUS] [-n NODES] [-a COPY BACK ALL FILES] INPUT_FILE
 
 EOF
 
-    exit 2
+  exit 2
 
 }
 
-function printExit
-{
-    case $1 in
-        [iI]) echo INFO: "$2" ;;
-        [wW]) echo WARNING: "$2" ;;
-        [eE]) echo ERROR: "$2" ; exit 1 ;;
-           *) echo "$1" ;;
-    esac
+function printExit {
+  case $1 in
+  [iI]) echo INFO: "$2" ;;
+  [wW]) echo WARNING: "$2" ;;
+  [eE])
+    echo ERROR: "$2"
+    exit 1
+    ;;
+  *) echo "$1" ;;
+  esac
 }
 
-
-function testFile
-{
-    if [ ! -r "$1" -o ! -f "$1" ] ; then
-        if [ "$2" = "return" ] ; then
-            returncode="1"
-        else
-            printExit E "Inputfile \"$1\" was not found."
-        fi
+function testFile {
+  if [ ! -r "$1" -o ! -f "$1" ]; then
+    if [ "$2" = "return" ]; then
+      returncode="1"
     else
-        returncode="0"
+      printExit E "Inputfile \"$1\" was not found."
     fi
+  else
+    returncode="0"
+  fi
 
-return "$returncode"
+  return "$returncode"
 }
-
 
 ### PROCESS OPTIONS
 
-while getopts adhj:m:N:p:n:q:t: options ; do
-      case $options in
-         
-         N) jobnamefix=$OPTARG
-            ;;
-         p) ncores=$OPTARG
-            ;;
-         n) nnodes=$OPTARG
-            ;;
-         a) copyall="yes"
-            ;;
-         m) memory=$OPTARG
-            ;;
-         j) holdid=$OPTARG
-            jobhold=1
-            echo "Not yet implemented."
-            exit 1
-            ;;
-         q) queue=$OPTARG
-            ;;                 
-         d) debug=1
-            ;;
-         h) usage
-            exit 0
-            ;;
-         t) jobtime=$OPTARG
-            ;;
-         \?)
-            echo "Invalid option: -$OPTARG" 
-            exit 1
-            ;;
-         \:)
-            echo "Option -$OPTARG requires an argument." 
-            exit 1
-            ;;
-         *) usage
-            exit 1
-            ;;
-      esac
-   done
+while getopts adhj:m:N:p:n:q:t: options; do
+  case $options in
 
+  N)
+    jobnamefix=$OPTARG
+    ;;
+  p)
+    ncores=$OPTARG
+    ;;
+  n)
+    nnodes=$OPTARG
+    ;;
+  a)
+    copyall="yes"
+    ;;
+  m)
+    memory=$OPTARG
+    ;;
+  j)
+    holdid=$OPTARG
+    jobhold=1
+    echo "Not yet implemented."
+    exit 1
+    ;;
+  q)
+    queue=$OPTARG
+    ;;
+  d)
+    debug=1
+    ;;
+  h)
+    usage
+    exit 0
+    ;;
+  t)
+    jobtime=$OPTARG
+    ;;
+  \?)
+    echo "Invalid option: -$OPTARG"
+    exit 1
+    ;;
+  \:)
+    echo "Option -$OPTARG requires an argument."
+    exit 1
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+  esac
+done
 
-shift $((OPTIND-1))
-
+shift $((OPTIND - 1))
 
 ### CHECK FOR INPUT ARGUMENTS
 
 if [ -z "$1" ]; then
-   echo "No filename specified."
-   exit 1
+  echo "No filename specified."
+  exit 1
 else
-   myname=$1
+  myname=$1
 fi
 
 ### CREATE DEFAULT JOBNAME
 
-jobname_default="`echo $dir | sed "s/\/data\/$USER\//d/" | sed "s/\/home\/$USER\//h/ ; s/\//./g"`.$myname"
+jobname_default="$(echo $dir | sed "s/\/data\/$USER\//d/" | sed "s/\/home\/$USER\//h/ ; s/\//./g").$myname"
 
 ### PROCESS VARIABLES
 
 if [ -z "$jobnamefix" ]; then
-   jobnamefix=$jobname_default
+  jobnamefix=$jobname_default
 fi
 if [ -z "$ncores" ]; then
-   ncores=$ncores_default
+  ncores=$ncores_default
 fi
 if [ -z "$nnodes" ]; then
-   nnodes=$nnodes_default
+  nnodes=$nnodes_default
 fi
 if [ -z "$memory" ]; then
-   memory=8 
+  memory=8
 fi
 if [ -z "$jobtime" ]; then
-   jobtime=$jobtime_default
+  jobtime=$jobtime_default
 fi
 
 ### CONSTRUCT OUTPUT FILENAME
 
-if [ -z "$1" ] ; then
-    usage
-    printExit E "No filename specified."
+if [ -z "$1" ]; then
+  usage
+  printExit E "No filename specified."
 else
-    myname=$1
+  myname=$1
 fi
 
 #
@@ -153,68 +160,66 @@ outputsuffix=(.log .out .log)
 choices=${#inputsuffix[*]}
 found=""
 
-if [ "${myname##*.}" != "$myname" ] ; then
-    for ((suffix=0; suffix<choices; suffix++)) ; do
-        if [ ".${myname##*.}" = "${inputsuffix[$suffix]}" ] ; then
-            testFile "$myname"
-            found="1"
-            jobname=${myname%${inputsuffix[$suffix]}}
-            if [ "${jobname:0:1}" = "/" ] ; then
-                infile=$jobname${inputsuffix[$suffix]}
-                outfile=$jobname${outputsuffix[$suffix]}
-		scriptfile=$jobname.sh
-            else
-                infile=$PWD/$jobname${inputsuffix[$suffix]}
-                outfile=$PWD/$jobname${outputsuffix[$suffix]}
-		scriptfile=$PWD/$jobname.sh
-            fi
-            break
-        fi
-    done
+if [ "${myname##*.}" != "$myname" ]; then
+  for ((suffix = 0; suffix < choices; suffix++)); do
+    if [ ".${myname##*.}" = "${inputsuffix[$suffix]}" ]; then
+      testFile "$myname"
+      found="1"
+      jobname=${myname%${inputsuffix[$suffix]}}
+      if [ "${jobname:0:1}" = "/" ]; then
+        infile=$jobname${inputsuffix[$suffix]}
+        outfile=$jobname${outputsuffix[$suffix]}
+        scriptfile=$jobname.sh
+      else
+        infile=$PWD/$jobname${inputsuffix[$suffix]}
+        outfile=$PWD/$jobname${outputsuffix[$suffix]}
+        scriptfile=$PWD/$jobname.sh
+      fi
+      break
+    fi
+  done
 fi
 
-if [ -z "$found" ] ; then
-    jobname="$myname"
-    for ((suffix=0; suffix<choices; suffix++)) ; do
-        if testFile "$jobname${inputsuffix[$suffix]}" "return" ; then
-            if [ -n "$found" ] ; then
-                printExit E "The name \"$myname\" is ambiguous, because more than one file with the possible suffixes [ ${inputsuffix[*]} ] exist."
-            else
-                found="1"
-                if [ "${jobname:0:1}" = "/" ] ; then
-                    infile=$jobname${inputsuffix[$suffix]}
-                    outfile=$jobname${outputsuffix[$suffix]}
-		    scriptfile=$jobname.sh
-                else
-                    infile=$PWD/$jobname${inputsuffix[$suffix]}
-                    outfile=$PWD/$jobname${outputsuffix[$suffix]}
-                    scriptfile=$PWD/$jobname.sh
-                fi
-            fi
-        fi
-    done
-    if [ -z "$found" ] ; then
-        if testFile "$myname" "return" ; then
-            printExit E "Your file \"$myname\" was found, but you have to append a suffix { ${inputsuffix[*]} } for clearness."
+if [ -z "$found" ]; then
+  jobname="$myname"
+  for ((suffix = 0; suffix < choices; suffix++)); do
+    if testFile "$jobname${inputsuffix[$suffix]}" "return"; then
+      if [ -n "$found" ]; then
+        printExit E "The name \"$myname\" is ambiguous, because more than one file with the possible suffixes [ ${inputsuffix[*]} ] exist."
+      else
+        found="1"
+        if [ "${jobname:0:1}" = "/" ]; then
+          infile=$jobname${inputsuffix[$suffix]}
+          outfile=$jobname${outputsuffix[$suffix]}
+          scriptfile=$jobname.sh
         else
-            printExit E "No file \"$myname\" ending in [ ${inputsuffix[*]} ] was found."
+          infile=$PWD/$jobname${inputsuffix[$suffix]}
+          outfile=$PWD/$jobname${outputsuffix[$suffix]}
+          scriptfile=$PWD/$jobname.sh
         fi
+      fi
     fi
+  done
+  if [ -z "$found" ]; then
+    if testFile "$myname" "return"; then
+      printExit E "Your file \"$myname\" was found, but you have to append a suffix { ${inputsuffix[*]} } for clearness."
+    else
+      printExit E "No file \"$myname\" ending in [ ${inputsuffix[*]} ] was found."
+    fi
+  fi
 fi
 
 ### SET QUEUE TO DEFAULT IF $QUEUE IS EMPTY
 
 if [ -z "$queue" ]; then
-
-    if [ "$jobtime" -le 2  ]; then
-        queue="batch"
-    elif [ "$jobtime" -gt 2 ] && [ "$jobtime" -le 72 ]; then
-        queue="batch"
-    elif [ "$jobtime" -gt 72 ]; then
-        queue="batch"
-    fi
+  if [ "$jobtime" -le 2 ]; then
+    queue="single"
+  elif [ "$jobtime" -gt 2 ] && [ "$jobtime" -le 72 ]; then
+    queue="single"
+  elif [ "$jobtime" -gt 72 ]; then
+    queue="batch"
+  fi
 fi
-
 
 ## GET MAIL
 
@@ -223,28 +228,30 @@ fi
 ### set %mem and %nproc according to qsub
 
 echo "Trying to figure out ncores and memory from infile..."
-if grep --ignore-case threads $infile ; then
-    coreset=`grep -m 1 --ignore-case threads $infile | awk '{print $2}'`
-    ncores=$coreset
-    echo "Found threads and setting ncores accordingly"
-    else echo "Threads not found, using ncores=$ncores from command-line/default"
+if grep --ignore-case threads $infile; then
+  coreset=$(grep -m 1 --ignore-case threads $infile | awk '{print $2}')
+  ncores=$coreset
+  echo "Found threads and setting ncores accordingly"
+else
+  echo "Threads not found, using ncores=$ncores from command-line/default"
 fi
 
 echo ""
 
-if grep --ignore-case mem_total $infile ; then
-    memset=`grep -m 1 --ignore-case mem_total $infile | awk '{print $2}'`
-    memory=$(echo "$memset/1000+2" | bc)
-    echo "Found mem_total and setting memory accordingly."
-    else echo "mem_total not found, using memory=$memory from command-line/default"
+if grep --ignore-case mem_total $infile; then
+  memset=$(grep -m 1 --ignore-case mem_total $infile | awk '{print $2}')
+  memory=$(echo "$memset/1000+2" | bc)
+  echo "Found mem_total and setting memory accordingly."
+else
+  echo "mem_total not found, using memory=$memory from command-line/default"
 fi
-echo "" 
+echo ""
 ### CREATE OPTION STRING FOR QSUB
 
 if [ -z "$jobhold" ]; then
-   optionstring=""
+  optionstring=""
 else
-   optionstring="-W depend=afterok:$holdid"
+  optionstring="-W depend=afterok:$holdid"
 
 fi
 
@@ -262,7 +269,7 @@ jobident=$(echo $jobnamefix | sed 's/.*\(...................\)/\1/')
 ### CREATE INPUT SCRIPT FOR QSUB
 test -e $scriptfile && mv $scriptfile ${scriptfile}_OLD
 
-cat <<EOT >> $scriptfile
+cat <<EOT >>$scriptfile
 #!/bin/bash
 
 # PBS Job
@@ -284,7 +291,7 @@ echo "The local scratch directory (located on the compute node) is:"
 echo "/tmp1/$user/"
 echo ""
 
-export QC=/home/mewes/SOFTWARE/QC54_TRUNK
+export QC=/home/mewes/SOFTWARE/QC54_TRUNK4INTEL_MM
 export QCAUX=/home/mewes/SOFTWARE/QC_AUX
 export QCSCRATCH=/tmp1/$user/
 export QCPLATFORM=LINUX_Ix86
@@ -306,7 +313,7 @@ fi
 EOT
 
 if [ $copyall ]; then
-    cat <<EOT >> $scriptfile
+  cat <<EOT >>$scriptfile
 
 #Copy plots back from Scratch 
 cp -r /tmp1/$user/$savedir/plots . 
@@ -314,12 +321,11 @@ cp -r /tmp1/$user/$savedir/plots .
 EOT
 fi
 
-
 if [ -z $debug ]; then
-   cat <<EOT
+  cat <<EOT
 Submitting job with settings:
 Name: $jobident, #CPU: $ncores, #Nodes: $nnodes, mem: ${memory}GB.
-EOT
+EOTPP
    qsub $optionstring $scriptfile
 
 else
@@ -329,6 +335,6 @@ Submit file created but not submitted.
 Name: $inname, #CPU: $ncores, #Nodes: $nnodes, mem: ${memory}GB.
 Submit with qsub $scriptname!
 EOT
-fi 
+fi
 
 exit 0
