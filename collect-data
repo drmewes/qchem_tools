@@ -1,4 +1,4 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 # coding: utf-8
 
 # HOW IT WORKS:
@@ -27,7 +27,7 @@ except ModuleNotFoundError:
 
 
 save = True
-save_loc = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data.csv")
+save_loc = os.path.join(os.path.dirname(os.path.realpath(".")), "data.csv")
 
 
 def main():

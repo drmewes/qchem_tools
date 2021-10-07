@@ -22,7 +22,6 @@ function usage {
   cat <<-EOF
 $PGM_NAME $PGM_VERSION
 Usage: $PGM_NAME [-j JOB_ID] [-t TIME]  [-m SIZE] [-N NAME] [-p CPUS] [-n NODES] [-a COPY BACK ALL FILES] INPUT_FILE
-
 EOF
 
   exit 2
@@ -212,10 +211,11 @@ fi
 ### SET QUEUE TO DEFAULT IF $QUEUE IS EMPTY
 
 if [ -z "$queue" ]; then
+
   if [ "$jobtime" -le 2 ]; then
-    queue="single"
+    queue="batch"
   elif [ "$jobtime" -gt 2 ] && [ "$jobtime" -le 72 ]; then
-    queue="single"
+    queue="batch"
   elif [ "$jobtime" -gt 72 ]; then
     queue="batch"
   fi
@@ -271,7 +271,6 @@ test -e $scriptfile && mv $scriptfile ${scriptfile}_OLD
 
 cat <<EOT >>$scriptfile
 #!/bin/bash
-
 # PBS Job
 #PBS -V
 #PBS -N $jobident
@@ -282,26 +281,20 @@ cat <<EOT >>$scriptfile
 #PBS -l mem=${memory}G
 #PBS -o $pbs_logfile
 #PBS -e $pbs_errorfile
-
-
 echo "Job is running on the compute node:"
 echo "\$PBS_NODEFILE"
 echo ""
 echo "The local scratch directory (located on the compute node) is:"
 echo "/tmp1/$user/"
 echo ""
-
 export QC=/home/mewes/SOFTWARE/QC54_TRUNK4INTEL_MM
 export QCAUX=/home/mewes/SOFTWARE/QC_AUX
 export QCSCRATCH=/tmp1/$user/
 export QCPLATFORM=LINUX_Ix86
-
 cd 
-
 # Backup old out files if existing 
 [ -e ${outfile}_OLD ] && cp $outfile ${outfile}_OLDER
 [ -e $outfile ] && cp $outfile ${outfile}_OLD
-
 cd $dir
 # Execute the program
 if [ "$copyall" = "yes" ] ; then
@@ -309,15 +302,12 @@ if [ "$copyall" = "yes" ] ; then
 else
 \$QC/bin/qchem $inname $outname
 fi
-
 EOT
 
 if [ $copyall ]; then
   cat <<EOT >>$scriptfile
-
 #Copy plots back from Scratch 
 cp -r /tmp1/$user/$savedir/plots . 
-
 EOT
 fi
 
@@ -325,12 +315,11 @@ if [ -z $debug ]; then
   cat <<EOT
 Submitting job with settings:
 Name: $jobident, #CPU: $ncores, #Nodes: $nnodes, mem: ${memory}GB.
-EOTPP
-   qsub $optionstring $scriptfile
+EOT
+  qsub $optionstring $scriptfile
 
 else
-   cat <<EOT
-
+  cat <<EOT
 Submit file created but not submitted. 
 Name: $inname, #CPU: $ncores, #Nodes: $nnodes, mem: ${memory}GB.
 Submit with qsub $scriptname!
