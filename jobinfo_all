@@ -96,7 +96,7 @@ def main():
       # add col names to list
       data.insert(0, cols)
 
-      if is_numpy and save and save_loc:
+      if save and save_loc:
         np.savetxt(save_loc, data, fmt='%s', delimiter="\t")
         print("Saved data to {}.".format(save_loc))
       else:
