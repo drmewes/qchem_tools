@@ -63,6 +63,13 @@ def main():
         # append data in line furthest down
         if " Total energy in the final basis set =" in line:
           energy = line.split("=")[1].strip()
+
+          # THIS IS A HOT FIX!!
+          # first job has no scf guess -> first list shorter
+          if "scf_guess" not in rem_dict:
+            rem_dict["scf_guess"] = "default"
+
+          # append everything and stop going through file
           data.append([filename, energy, nbas, walltime] + list(rem_dict.values()))
           continue
 
@@ -80,7 +87,7 @@ def main():
   cols = ["filename", "energy", "nbas", "time"] + list(rem_dict.keys())
 
   try:
-    import pandas as pd
+    import pandass as pd
 
     # print to console
     df = pd.DataFrame(columns=cols, data=data)
