@@ -1,0 +1,9 @@
+filename,energy,nbas,time,jobtype,basis,method,omega,thresh,scf_convergence,scf_max_cycles,geom_opt_max_cycles,geom_opt_dmax,sym_ignore,mem_static,mem_total,threads,scf_guess
+./tests/multijob.out,-392.7199247908,590,864.00,sp,def2-tzvpp,lc-wPBE08,100,11,8,250,250,140,true,1000,24000,1,
+./tests/multijob.out,-392.7634068547,590,550.00,sp,def2-tzvpp,lc-wPBE08,150,11,8,250,250,140,true,1000,24000,1,read
+./tests/multijob.out,-392.8139412298,590,558.00,sp,def2-tzvpp,lc-wPBE08,200,11,8,250,250,140,true,1000,24000,1,read
+./tests/multijob.out,-392.8652188435,590,558.00,sp,def2-tzvpp,lc-wPBE08,250,11,8,250,250,140,true,1000,24000,1,read
+./tests/multijob.out,-392.9129978275,590,570.00,sp,def2-tzvpp,lc-wPBE08,300,11,8,250,250,140,true,1000,24000,1,read
+./tests/multijob.out,-392.9546607288,590,543.00,sp,def2-tzvpp,lc-wPBE08,350,11,8,250,250,140,true,1000,24000,1,read
+./tests/multijob.out,-392.9888383428,590,505.00,sp,def2-tzvpp,lc-wPBE08,400,11,8,250,250,140,true,1000,24000,1,read
+./tests/multijob.out,-393.0151042179,590,497.00,sp,def2-tzvpp,lc-wPBE08,450,11,8,250,250,140,true,1000,24000,1,read
