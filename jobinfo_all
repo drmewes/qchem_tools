@@ -9,7 +9,7 @@ import argparse
 
 def main():
   parser = argparse.ArgumentParser(description='Q-CHEM JOB INFO\nSearch recursively for all .out files and get general info.')
-  parser.add_argument("-v", '--verbose', nargs='?', const=0, type=int, help="Print more. Number of rows optional.")
+  parser.add_argument("-v", '--verbose', nargs='?', const=0, type=int, help="Print more. Number of rows optional. 0 prints everything")
   parser.add_argument("-s", "--save", nargs='?', const="data.csv", type=str, help="Save output. Name is optional. Defaults to 'data.csv'.")
   args = parser.parse_args()
 
@@ -22,7 +22,7 @@ def main():
     num_jobs = 1
 
     with open(filename, errors='ignore') as f:
-      for i, line in enumerate(f):
+      for line in f:
 
         # only entered if previous line was start of rem block
         if rem == True:
@@ -87,10 +87,10 @@ def main():
   cols = ["filename", "energy", "nbas", "time"] + list(rem_dict.keys())
 
   try:
-    import pandass as pd
+    import pandas as pd
 
-    # print to console
     df = pd.DataFrame(columns=cols, data=data)
+
     # print to console
     if args.verbose:
       if args.verbose == 0:
@@ -136,18 +136,13 @@ def main():
 
 def getFileList():
   filelist = []
-  try:
-    for file in glob.glob('./**/*.out', recursive=True):
-      filelist.append(file)
+  for file in glob.glob('./**/*.out', recursive=True):
+    filelist.append(file)
 
-    if len(filelist) == 0:
-      print("No files found.", filelist)
-      sys.exit()
+  if len(filelist) == 0:
+    sys.exit("No '.out' files found.")
 
-    return filelist
-  except Exception as e:
-    print(e)
-    sys.exit()
+  return filelist
 
 
 if __name__ == '__main__':
