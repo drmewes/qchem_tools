@@ -67,7 +67,7 @@ if [ -z "$1" ]; then
     usage
     exit 1
 else
-    infile=$(echo "$1" | sed "s/res_//" | sed "s/.sh//")   
+    infile=$(echo $(basename $1) | sed "s/res_//" | sed "s/.sh//")   
 fi
 
 
@@ -114,44 +114,55 @@ cat <<-EOT >>$scriptfile
 #PBS -o pbs_${infile}.log
 #PBS -e pbs_${infile}.err
 #
+
+# dirs
+TMP_DIR=/tmp1/\$USER
+DIR1=\$PWD
+
 cd \$PBS_O_WORKDIR
 export PARNODES=\$(wc -l \$PBS_NODEFILE | gawk '{print \$1}')
 export TM_PAR_FORK=1
-export PATH=\$HOME/bin:\$PATH:\$HOME/calc/FIT
+export PATH=\$HOME/bin:\$PATH:\$HOME/projects/d4-param/FIT
 export HOSTS_FILE=\$PBS_NODEFILE
 export LC_NUMERIC=en_US.UTF-8
+
 cat \$HOSTS_FILE >hosts_file
-TMP_DIR=/tmp1/\$USER
-DIR1=\$PWD
 mkdir -p \$TMP_DIR/\$PBS_JOBID
+
 #check file system access
 if [ ! -d \$TMP_DIR/\$PBS_JOBID ]; then
   echo "Unable to create \$TMP_DIR/\$PBS_JOBID  on \$HOSTNAME. Must stop."
   exit
 fi
+
 #check current location
 if [ "\$PWD" == "\$HOME" ]; then
   echo "Cowardly refusing to copy the whole home directory"
   exit
 fi
+
 #copy everything to node (will NOT copy directories for safety reasons. Add an 'r' only if absolutely sure what you are doing)
 #bwlimit limits bandwidth to 5000 kbytes/sec
 rsync -q --bwlimit=5000 \$DIR1/set.tar.xz \$TMP_DIR/\$PBS_JOBID/
 cd \$TMP_DIR/\$PBS_JOBID
+
 #####################################################################################
 #Gettimings
 start=\$(date +%s)
+
 #####################################################################################
 #jobs start here (if you have no idea what this script does, only edit this part...)
 module load dftd4/2.5.1
 tar xf \$DIR1/set.tar.xz
 mfit2 1.00000000 0.40000000 5.00000000 -n ${infile}_d4_eeq_atm -p 'run_atm.sh $infile 1.0'
 #end of job      (....and stop editing here.)
+
 #####################################################################################
 #Print timings to file
 end=\$(date +%s)
 secs=\$(expr \$end - \$start)
 printf '%dh:%dm:%02ds\n' \$((\$secs / 3600)) \$((\$secs % 3600 / 60)) \$((\$secs % 60)) >RUNTIME
+
 #####################################################################################
 #copy everything back that is smaller than 5 gbytes
 
@@ -171,7 +182,7 @@ if [ -z $debug ]; then
 else
     echo "Submit file created but not submitted."
     echo "Name: $infile, CPUs: $ncores, Nodes: $nnodes, mem: ${memory}GB."
-    echo "Submit with qsub $infile!"
+    echo "Submit with qsub $(basename $scriptfile)!"
 fi
 
 exit 0
