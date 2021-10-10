@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+# coding: utf-8
+
+from glob import glob
+import os
+import sys
+import argparse
+
+
+def getFileList():
+  filelist = []
+  for file in sorted(glob('./*d4*.out')):
+    filelist.append(file)
+
+  if len(filelist) == 0:
+    sys.exit("No '*d4*.out' files found.")
+
+  return filelist
+
+
+def main():
+  parser = argparse.ArgumentParser(
+      description='Q-CHEM JOB INFO\nSearch recursively for all *d4*.out files and get general info.')
+  parser.add_argument("-v", '--verbose', nargs='?', const=0, type=int,
+                      help="Print more. Number of rows optional. 0 prints everything")
+  parser.add_argument("-s", "--save", nargs='?', const="fit_params.csv",
+                      type=str, help="Save output. Name is optional. Defaults to 'fit_params.csv'.")
+  args = parser.parse_args()
+
+  data = []
+  for filename in getFileList():
+    with open(filename, errors="ignore") as f:
+      paramblock = False
+
+      for line in f:
+        if line.startswith("Optimizied parameters"):
+          paramblock = True
+          continue
+
+        if paramblock:
+          line = line.strip()
+          if line.startswith("1"):
+            s8 = line.split()[-1]
+          if line.startswith("2"):
+            a1 = line.split()[-1]
+          if line.startswith("3"):
+            a2 = line.split()[-1]
+
+      if not paramblock:
+        sys.exit("No parameters found in {}".format(filename))
+
+    data.append([filename, s8, a1, a2])
+
+
+  # printing and saving
+  cols = ["file", "s8", "a1", "a2"]
+
+  try:
+    import pandas as pd
+
+    df = pd.DataFrame(columns=cols, data=data)
+
+    # print to console
+    if args.verbose:
+      if args.verbose == 0:
+        pd.set_option('display.max_rows', None)
+        print(df)
+      else:
+        print(df.head(args.verbose))
+    else:
+      print(df)
+
+    # save
+    if args.save:
+      save_loc = os.path.join(os.path.realpath("."), args.save)
+      df.to_csv(save_loc, index=False)
+      print("\nSaved data to {}.".format(save_loc))
+
+  except ModuleNotFoundError:
+    # fallback: using numpy for saving data to csv
+    try:
+      import numpy as np
+
+      # add col names to list
+      data.insert(0, cols)
+
+      # print to console
+      print("")
+      if args.verbose:
+        if args.verbose != 0:
+          data = data[:(args.verbose + 1)]
+        print('\n'.join(' '.join(str(x) for x in row) for row in data))
+      else:
+        print('\n'.join(' '.join(str(x) for x in row) for row in data[:10]))
+
+      # save
+      if args.save:
+        save_loc = os.path.join(os.path.realpath("."), args.save)
+        np.savetxt(save_loc, data, fmt='%s', delimiter="\t")
+        print("\nSaved data to {}.".format(save_loc))
+
+    except ModuleNotFoundError:
+      print("Modules 'pandas' and 'numpy' not found. Data will not be saved.")
+
+
+if __name__ == '__main__':
+  main()
