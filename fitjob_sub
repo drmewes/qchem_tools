@@ -61,6 +61,7 @@ done
 shift "$((OPTIND - 1))"
 
 
+
 ### FILE NAME
 if [ -z "$1" ]; then
     echo "No filename specified."
@@ -68,6 +69,17 @@ if [ -z "$1" ]; then
     exit 1
 else
     infile=$(echo $(basename $1) | sed "s/res_//" | sed "s/.sh//")   
+fi
+
+### CHECK FILE
+if [[ ! -f "$1" ]]; then
+    echo "The res file '$1' was not found."
+    exit 1
+fi
+
+if [[ ! -x $(realpath "$1") ]]; then
+    echo "The res file '$1' must be executable."
+    exit 1
 fi
 
 

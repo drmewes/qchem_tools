@@ -47,7 +47,7 @@ def main():
             a2 = line.split()[-1]
 
       if not paramblock:
-        sys.exit(f"No parameters found in {filename}")
+        print(f"WARNING! No parameters found in {filename}")
 
     data.append([filename, s8, a1, a2])
 
