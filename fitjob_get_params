@@ -47,7 +47,7 @@ def main():
             a2 = line.split()[-1]
 
       if not paramblock:
-        sys.exit("No parameters found in {}".format(filename))
+        sys.exit(f"No parameters found in {filename}")
 
     data.append([filename, s8, a1, a2])
 
@@ -63,7 +63,7 @@ def main():
     # print to console
     if args.verbose:
       if args.verbose == 0:
-        pd.set_option('display.max_rows', None)
+        pd.set_option('display.max_rows', df.shape[0] + 1)
         print(df)
       else:
         print(df.head(args.verbose))
