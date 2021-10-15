@@ -113,16 +113,19 @@ cat <<-EOT >>$scriptfile
 #PBS -l mem=${memory}G
 #PBS -o pbs_${infile}.log
 #PBS -e pbs_${infile}.err
-#
+
+# go to working directory first
+cd \$PBS_O_WORKDIR
 
 # dirs
+D4=\$HOME/projects/d4-param/FIT
 TMP_DIR=/tmp1/\$USER
 DIR1=\$PWD
 
-cd \$PBS_O_WORKDIR
+
 export PARNODES=\$(wc -l \$PBS_NODEFILE | gawk '{print \$1}')
 export TM_PAR_FORK=1
-export PATH=\$HOME/bin:\$PATH:\$HOME/projects/d4-param/FIT
+export PATH=\$D4:\$PATH
 export HOSTS_FILE=\$PBS_NODEFILE
 export LC_NUMERIC=en_US.UTF-8
 
@@ -131,7 +134,7 @@ mkdir -p \$TMP_DIR/\$PBS_JOBID
 
 #check file system access
 if [ ! -d \$TMP_DIR/\$PBS_JOBID ]; then
-  echo "Unable to create \$TMP_DIR/\$PBS_JOBID  on \$HOSTNAME. Must stop."
+  echo "Unable to create \$TMP_DIR/\$PBS_JOBID on \$HOSTNAME. Must stop."
   exit
 fi
 
