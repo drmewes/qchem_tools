@@ -46,10 +46,11 @@ def main():
           if line.startswith("3"):
             a2 = line.split()[-1]
 
-      if not paramblock:
-        print(f"WARNING! No parameters found in {filename}")
-
-    data.append([filename, s8, a1, a2])
+    if not paramblock:
+      print(f"WARNING! No parameters found in {filename}.")
+      data.append([filename, "NaN", "NaN", "NaN"])
+    else:
+      data.append([filename, s8, a1, a2])
 
 
   # printing and saving

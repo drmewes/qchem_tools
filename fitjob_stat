@@ -2,7 +2,9 @@
 # coding: utf-8
 
 import sys
+import os
 from pathlib import Path
+import argparse
 
 try:
   import pandas as pd
@@ -29,7 +31,7 @@ def rmsd(data):
   return np.sqrt(np.mean(np.square(data)))
 
 
-def main():
+def stat_no_d4(args):
   # setting some variables
   omegas = [100, 150, 200, 250, 300, 350, 400, 450]
   num_jobs = len(omegas)
@@ -233,23 +235,20 @@ def main():
   ## Get Statistics ##
   ####################
 
-  MDs = ["MD"]
+  MDs = []
+  MADs = []
+  RMSDs = []
+
   for col in cols:
     MDs.append(md(df[col]))
-
-  MADs = ["MAD"]
-  for col in cols:
     MADs.append(mad(df[col]))
-
-  MAEs = ["MAE"]
-  for col in cols:
-    MAEs.append(mae(df[col]))
-
-  RMSDs = ["RMSD"]
-  for col in cols:
     RMSDs.append(rmsd(df[col]))
 
-  df = pd.DataFrame(columns=["measure"] + omegas, data=np.array([MDs, MADs, MAEs, RMSDs]))
+  data = []
+  for i, omega in enumerate(omegas):
+    data.append([omega, MDs[i], MADs[i], RMSDs[i],])
+
+  df = pd.DataFrame(columns=["omega", "MD", "MAD", "RMSD"], data=data)
 
   cols = [i for i in df.columns if i != "measure"]
   for col in cols:
@@ -259,9 +258,70 @@ def main():
   print("\n")
   print("Statistics")
   print("----------")
-  print(df)
+  print(df.to_string(index=False))
+
+  if args.save:
+    out_file = f"stat_{Path.cwd().name.lower()}_nod4.csv"
+    save_loc = os.path.join(os.path.realpath("."), out_file)
+    df.to_csv(save_loc, index=False)
+    print("\nSaved data to {}.".format(save_loc))
+  
+
+def stat_fit(args):
+  omegas = [100, 150, 200, 250, 300, 350, 400, 450]
+  MDs = []
+  MADs = []
+  RMSDs = []
+
+  for filename in sorted(Path(".").glob("*d4*.out")):
+    paramline = False
+    found = False
+    with open(filename) as f:
+      for line in f:
+        if line.startswith("Final run:"):
+          paramline = True
+          found = True
+          continue
+
+        if paramline:
+          l = line.strip().split()
+          MDs.append(l[5])
+          MADs.append(l[7])
+          RMSDs.append(l[9])
+          paramline = False
+
+    if not found:
+      print(f"WARNING! No parameters found in {filename}.")
+      MDs.append("NaN")
+      MADs.append("NaN")
+      RMSDs.append("NaN")
+
+  data = []
+  for i, omega in enumerate(omegas):
+    data.append([omega, MDs[i], MADs[i], RMSDs[i],])
+
+  cols = ["omega", "MD", "MAD", "RMSD"]
+  df = pd.DataFrame(columns=cols, data=data)
+  print(df.to_string(index=False))
+
+  if args.save:
+    out_file = f"stat_{Path.cwd().name.lower()}_fit.csv"
+    save_loc = os.path.join(os.path.realpath("."), out_file)
+    df.to_csv(save_loc, index=False)
+    print("\nSaved data to {}.".format(save_loc))
 
 
+def main():
+  parser = argparse.ArgumentParser(description="Get statistical data.")
+  parser.add_argument("-f", "--fit", action="store_true", help="Statistics from fit job.")
+  parser.add_argument("-s", "--save", action="store_true", help="Save output.")
+  args = parser.parse_args()
+
+  if args.fit:
+    stat_fit(args)
+  else:
+    stat_no_d4(args)
+  
 
 if __name__ == '__main__':
   main()
