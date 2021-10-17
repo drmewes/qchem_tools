@@ -1,44 +1,28 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-# HOW IT WORKS:
-# Searches recursively in current directory for all *.out files.
-# Creates data.csv in current directory (if pandas available)
-
 import glob
 import os
 import sys
-
-try:
-  import pandas as pd
-  is_pandas = True
-except ModuleNotFoundError:
-  print("Module 'pandas' not found. Trying to use numpy...")
-  is_pandas = False
-
-  # fallback: using numpy for saving data to csv
-  try:
-    import numpy as np
-    is_numpy = True
-  except ModuleNotFoundError:
-    print("Module 'numpy' not found. Data will not be saved.")
-    is_numpy = False
-
-
-
-save = True
-save_loc = os.path.join(os.path.realpath("."), "data.csv")
+import argparse
 
 
 def main():
-  data = []
+  parser = argparse.ArgumentParser(description='Q-CHEM JOB INFO\nSearch recursively for all .out files and get general info.')
+  parser.add_argument("-v", '--verbose', nargs='?', const=0, type=int, help="Print more. Number of rows optional. 0 prints everything")
+  parser.add_argument("-s", "--save", nargs='?', const="data.csv", type=str, help="Save output. Name is optional. Defaults to 'data.csv'.")
+  args = parser.parse_args()
 
+
+  data = []
   for filename in getFileList():
     rem = False
     rem_dict = {}
+    count_criter = 0
+    num_jobs = 1
 
     with open(filename, errors='ignore') as f:
-      for i, line in enumerate(f):
+      for line in f:
 
         # only entered if previous line was start of rem block
         if rem == True:
@@ -50,75 +34,116 @@ def main():
 
 
         # turns true if rem block is hit
-        if line.startswith("$rem"): 
+        if line.startswith("$rem"):
           rem = True
+          continue
+
+
+        # get number of jobs in multijob file
+        if line.startswith("User input:") and "of" in line:
+          num_jobs = int(line.strip().split()[-1])
+          continue
+
+        if "Convergence criterion met" in line:
+          count_criter += 1
           continue
 
 
         if "shells" in line and "basis functions" in line:
           nbas = line.split("shells and")[1].split("basis functions")[0].strip()
+          continue
 
 
         if line.startswith(" SCF time:   CPU"):
           walltime = line.split("wall")[1].strip()
           walltime = walltime[:-1]
+          continue
 
 
         # append data in line furthest down
         if " Total energy in the final basis set =" in line:
           energy = line.split("=")[1].strip()
-          data.append([filename, rem_dict["jobtype"], rem_dict["method"], rem_dict["basis"], rem_dict["omega"], energy, nbas, walltime, rem_dict["threads"]])
+
+          # THIS IS A HOT FIX!!
+          # first job has no scf guess -> first list shorter
+          if "scf_guess" not in rem_dict:
+            rem_dict["scf_guess"] = "default"
+
+          # append everything and stop going through file
+          data.append([filename, energy, nbas, walltime] + list(rem_dict.values()))
+          continue
+
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        print("\n!!!!!!!!!")
+        print("Convergence error or convergence not yet reached in {}.".format(filename))
+        print("\n!!!!!!!!!")
 
 
   ########################################      
   ## data collection (outside of loop!) ##
   ########################################
 
-  cols = ["file", "jobtype",  "method", "basis", "omega", "energy", "nbas", "time", "threads"]
-  if is_pandas == True:
+  cols = ["filename", "energy", "nbas", "time"] + list(rem_dict.keys())
+
+  try:
+    import pandas as pd
+
     df = pd.DataFrame(columns=cols, data=data)
 
-    # assign data types
-    df["omega"] = pd.to_numeric(df["omega"])
-    df["energy"] = pd.to_numeric(df["energy"])
-    df["nbas"] = pd.to_numeric(df["nbas"])
-    df["time"] = pd.to_numeric(df["time"])
-
-    if save == True and save_loc:
-      df.to_csv(save_loc, index=False)
-      print("Saved data to {}.".format(save_loc))
-
-    print("")
-    print(df)
-  else:
-    # add col names to list
-    data.insert(0, cols)
-
-    if is_numpy and save and save_loc:
-      np.savetxt(save_loc, data, fmt='%s', delimiter="\t")
-      print("Saved data to {}.".format(save_loc))
+    # print to console
+    if args.verbose:
+      if args.verbose == 0:
+        pd.set_option('display.max_rows', None)
+        print(df)
+      else:
+        print(df.head(args.verbose))
     else:
-      print("Saving failed.")
+      print(df)
 
-    print("")
-    print('\n'.join(' '.join(str(x) for x in row) for row in data))
+    # save
+    if args.save:
+      save_loc = os.path.join(os.path.realpath("."), args.save)
+      df.to_csv(save_loc, index=False)
+      print("\nSaved data to {}.".format(save_loc))
+
+  except ModuleNotFoundError:
+    # fallback: using numpy for saving data to csv
+    try:
+      import numpy as np
+
+      # add col names to list
+      data.insert(0, cols)
+
+      # print to console
+      print("")
+      if args.verbose:
+        if args.verbose != 0:
+          data = data[:(args.verbose + 1)]
+        print('\n'.join(' '.join(str(x) for x in row) for row in data))
+      else:
+        print('\n'.join(' '.join(str(x) for x in row) for row in data[:10]))
+
+      # save 
+      if args.save:
+        save_loc = os.path.join(os.path.realpath("."), args.save)
+        np.savetxt(save_loc, data, fmt='%s', delimiter="\t")
+        print("\nSaved data to {}.".format(save_loc))
+
+    except ModuleNotFoundError:
+      print("Modules 'pandas' and 'numpy' not found. Data will not be saved.")
 
 
 def getFileList():
   filelist = []
-  try:
-    for file in glob.glob('./**/*.out', recursive=True):
-      if file.endswith(".out"):
-        filelist.append(file)
+  for file in glob.glob('./**/*.out', recursive=True):
+    filelist.append(file)
 
-    if len(filelist) == 0:
-      print("No files found.", filelist)
-      sys.exit()
+  if len(filelist) == 0:
+    sys.exit("No '.out' files found.")
 
-    return filelist
-  except Exception as e:
-    print(e)
-    sys.exit()
+  return filelist
 
 
 if __name__ == '__main__':

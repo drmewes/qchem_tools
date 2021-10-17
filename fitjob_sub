@@ -1,0 +1,203 @@
+#!/bin/bash
+
+PGM_NAME="fitjob_sub"
+
+dir=$(pwd)
+default_ncores=4
+default_nnodes=1
+default_queue="single"
+default_jobtime=10
+default_memory=8
+
+function usage {
+echo "Usage: $PGM_NAME [t TIME]  [-m SIZE] [-N NAME] [-p CPUS] [-n NODES] INPUT_FILE"
+exit 2
+}
+
+
+### PROCESS OPTIONS
+while getopts dh:m:N:p:n:q:t: options; do
+    case $options in
+        N)
+            jobnamefix=$OPTARG
+            ;;
+        p)
+            ncores=$OPTARG
+            ;;
+        n)
+            nnodes=$OPTARG
+            ;;
+        m)
+            memory=$OPTARG
+            ;;
+        q)
+            queue=$OPTARG
+            ;;
+        d)
+            debug=1
+            ;;
+        h)
+            usage
+            exit 0
+            ;;
+        t)
+            jobtime=$OPTARG
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG"
+            exit 1
+            ;;
+        \:)
+            echo "Option -$OPTARG requires an argument."
+            exit 1
+            ;;
+        *)
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+shift "$((OPTIND - 1))"
+
+
+
+### FILE NAME
+if [ -z "$1" ]; then
+    echo "No filename specified."
+    usage
+    exit 1
+else
+    infile=$(echo $(basename $1) | sed "s/res_//" | sed "s/.sh//")   
+fi
+
+### CHECK FILE
+if [[ ! -f "$1" ]]; then
+    echo "The res file '$1' was not found."
+    exit 1
+fi
+
+if [[ ! -x $(realpath "$1") ]]; then
+    echo "The res file '$1' must be executable."
+    exit 1
+fi
+
+
+
+### PROCESS VARIABLES
+if [ -z "$jobnamefix" ]; then
+    jobnamefix=fitd4_${infile}
+fi
+if [ -z "$ncores" ]; then
+    ncores=$default_ncores
+fi
+if [ -z "$nnodes" ]; then
+    nnodes=$default_nnodes
+fi
+if [ -z "$memory" ]; then
+    memory=$default_memory
+fi
+if [ -z "$jobtime" ]; then
+    jobtime=$default_jobtime
+fi
+if [ -z "$queue" ]; then
+    queue=$default_queue
+fi
+
+
+### CREATING SCRIPTFILE
+scriptfile="$PWD/fitjob_$infile"
+
+if [ -e "$scriptfile" ]; then
+    echo "$scriptfile already exists! Aborting..."
+    exit 1
+fi
+
+cat <<-EOT >>$scriptfile 
+#!/bin/bash
+# PBS Job
+#PBS -V
+#PBS -k n
+#PBS -N $jobnamefix
+#PBS -q $queue
+#PBS -l nodes=1:ppn=$ncores
+#PBS -l walltime=$jobtime:0:0
+#PBS -l mem=${memory}G
+#PBS -o pbs_${infile}.log
+#PBS -e pbs_${infile}.err
+
+# go to working directory first
+cd \$PBS_O_WORKDIR
+
+# dirs
+D4=\$HOME/projects/d4-param/FIT
+TMP_DIR=/tmp1/\$USER
+DIR1=\$PWD
+
+
+export PARNODES=\$(wc -l \$PBS_NODEFILE | gawk '{print \$1}')
+export TM_PAR_FORK=1
+export PATH=\$D4:\$PATH
+export HOSTS_FILE=\$PBS_NODEFILE
+export LC_NUMERIC=en_US.UTF-8
+
+cat \$HOSTS_FILE >hosts_file
+mkdir -p \$TMP_DIR/\$PBS_JOBID
+
+#check file system access
+if [ ! -d \$TMP_DIR/\$PBS_JOBID ]; then
+  echo "Unable to create \$TMP_DIR/\$PBS_JOBID on \$HOSTNAME. Must stop."
+  exit
+fi
+
+#check current location
+if [ "\$PWD" == "\$HOME" ]; then
+  echo "Cowardly refusing to copy the whole home directory"
+  exit
+fi
+
+#copy everything to node (will NOT copy directories for safety reasons. Add an 'r' only if absolutely sure what you are doing)
+#bwlimit limits bandwidth to 5000 kbytes/sec
+rsync -q --bwlimit=5000 \$DIR1/set.tar.xz \$TMP_DIR/\$PBS_JOBID/
+cd \$TMP_DIR/\$PBS_JOBID
+
+#####################################################################################
+#Gettimings
+start=\$(date +%s)
+
+#####################################################################################
+#jobs start here (if you have no idea what this script does, only edit this part...)
+module load dftd4/2.5.1
+tar xf \$DIR1/set.tar.xz
+mfit2 1.00000000 0.40000000 5.00000000 -n ${infile}_d4_eeq_atm -p 'run_atm.sh $infile 1.0'
+#end of job      (....and stop editing here.)
+
+#####################################################################################
+#Print timings to file
+end=\$(date +%s)
+secs=\$(expr \$end - \$start)
+printf '%dh:%dm:%02ds\n' \$((\$secs / 3600)) \$((\$secs % 3600 / 60)) \$((\$secs % 60)) >RUNTIME
+
+#####################################################################################
+#copy everything back that is smaller than 5 gbytes
+
+rsync -q --bwlimit=5000 --max-size=5G \$TMP_DIR/\$PBS_JOBID/* \$DIR1/
+
+cd \$DIR1
+rm -r \$TMP_DIR/\$PBS_JOBID
+EOT
+
+
+### SUBMITTING
+if [ -z $debug ]; then
+    echo "Submitting job with settings:"
+    echo "Name: $infile, CPUs: $ncores, Nodes: $nnodes, mem: ${memory}GB."
+    qsub $scriptfile
+
+else
+    echo "Submit file created but not submitted."
+    echo "Name: $infile, CPUs: $ncores, Nodes: $nnodes, mem: ${memory}GB."
+    echo "Submit with qsub $(basename $scriptfile)!"
+fi
+
+exit 0

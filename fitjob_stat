@@ -1,0 +1,327 @@
+#!/usr/bin/env python3
+# coding: utf-8
+
+import sys
+import os
+from pathlib import Path
+import argparse
+
+try:
+  import pandas as pd
+except ModuleNotFoundError:
+  sys.exit("Module 'pandas' not installed. Exiting.")
+
+try:
+  import numpy as np
+except ModuleNotFoundError:
+  sys.exit("Module 'numpy' not installed. Exiting.")
+
+
+
+def md(data, axis=None):
+  return np.mean(data, axis)
+
+def mad(data, axis=None):
+  return np.mean(np.absolute(data - np.mean(data, axis)), axis)
+
+def mae(data):
+  return np.mean(np.absolute(data))
+
+def rmsd(data):
+  return np.sqrt(np.mean(np.square(data)))
+
+
+def stat_no_d4(args):
+  # setting some variables
+  omegas = [100, 150, 200, 250, 300, 350, 400, 450]
+  num_jobs = len(omegas)
+
+  factor = 627.50947428
+  num_decimals = 4
+  data = []
+
+  # Reading in reference data
+  nci = pd.read_csv("NCIBLIND10/ref.csv", dtype={"dimer": str})
+  nci_list = nci["dimer"].to_list()
+  nci_ref = nci["reference"].to_list()
+
+  s22x5 = pd.read_csv("S22x5/ref.csv", dtype={"dimer": str})
+  s22x5_list = s22x5["dimer"].to_list()
+  s22x5_ref = s22x5["reference"].to_list()
+
+  s66x8 = pd.read_csv("S66x8/ref.csv", dtype={"dimer": str})
+  s66x8_list = s66x8["dimer"].to_list()
+  s66x8_ref = s66x8["reference"].to_list()
+
+  # S22x5
+  for i, d in enumerate(s22x5_list):
+    dimer = f"S22x5/{d}"
+    monoA = f"S22x5/{d.split('_')[0]}A"
+    monoB = f"S22x5/{d.split('_')[0]}B"
+
+    e_dimer = []
+    with open(Path(f"{dimer}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_dimer.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    e_monoA = []
+    with open(Path(f"{monoA}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_monoA.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    e_monoB = []
+    with open(Path(f"{monoB}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_monoB.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+
+    e = (np.asarray(e_dimer) - np.asarray(e_monoA) - np.asarray(e_monoB))*factor - s22x5_ref[i]
+    data.append([dimer] + e.tolist())
+
+
+  # S66x8
+  for i, d in enumerate(s66x8_list):
+    dimer = f"S66x8/{d}"
+    monoA = f"S66x8/{d.split('.')[0]}A"
+    monoB = f"S66x8/{d.split('.')[0]}B"
+
+    e_dimer = []
+    with open(Path(f"{dimer}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_dimer.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    e_monoA = []
+    with open(Path(f"{monoA}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_monoA.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    e_monoB = []
+    with open(Path(f"{monoB}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_monoB.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    e = (np.asarray(e_dimer) - np.asarray(e_monoA) - np.asarray(e_monoB))*factor - s66x8_ref[i]
+    data.append([dimer] + e.tolist())
+
+
+  # NCIBLIND10
+  for i, d in enumerate(nci_list):
+    dimer = f"NCIBLIND10/{d}"
+
+    if int(d) < 100:
+      monoA = f"NCIBLIND10/{d[0]}A"
+      monoB = f"NCIBLIND10/{d[0]}B"
+    else:
+      monoA = "NCIBLIND10/10A"
+      monoB = "NCIBLIND10/10B"
+
+    e_dimer = []
+    with open(Path(f"{dimer}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_dimer.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    e_monoA = []
+    with open(Path(f"{monoA}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_monoA.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    e_monoB = []
+    with open(Path(f"{monoB}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_monoB.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    e = (np.asarray(e_dimer) - np.asarray(e_monoA) - np.asarray(e_monoB))*factor - nci_ref[i]
+    data.append([dimer] + e.tolist())
+
+
+  # show data
+  data = np.asarray(data)
+  cols = ["system"] + omegas
+  df = pd.DataFrame(columns=cols, data=data)
+
+  cols = [i for i in df.columns if i != "system"]
+  for col in cols:
+    df[col] = pd.to_numeric(df[col])
+
+  df = df.round(num_decimals)
+  
+  print(f"Data: E_int - E_ref for {Path.cwd().name}")
+  print("---------------------------------")
+  print(df)
+
+
+  ####################
+  ## Get Statistics ##
+  ####################
+
+  MDs = []
+  MADs = []
+  RMSDs = []
+
+  for col in cols:
+    MDs.append(md(df[col]))
+    MADs.append(mad(df[col]))
+    RMSDs.append(rmsd(df[col]))
+
+  data = []
+  for i, omega in enumerate(omegas):
+    data.append([omega, MDs[i], MADs[i], RMSDs[i],])
+
+  df = pd.DataFrame(columns=["omega", "MD", "MAD", "RMSD"], data=data)
+
+  cols = [i for i in df.columns if i != "measure"]
+  for col in cols:
+    df[col] = pd.to_numeric(df[col])
+
+  df = df.round(num_decimals)
+  print("\n")
+  print("Statistics")
+  print("----------")
+  print(df.to_string(index=False))
+
+  if args.save:
+    out_file = f"stat_{Path.cwd().name.lower()}_nod4.csv"
+    save_loc = os.path.join(os.path.realpath("."), out_file)
+    df.to_csv(save_loc, index=False)
+    print("\nSaved data to {}.".format(save_loc))
+  
+
+def stat_fit(args):
+  omegas = [100, 150, 200, 250, 300, 350, 400, 450]
+  MDs = []
+  MADs = []
+  RMSDs = []
+
+  for filename in sorted(Path(".").glob("*d4*.out")):
+    paramline = False
+    found = False
+    with open(filename) as f:
+      for line in f:
+        if line.startswith("Final run:"):
+          paramline = True
+          found = True
+          continue
+
+        if paramline:
+          l = line.strip().split()
+          MDs.append(l[5])
+          MADs.append(l[7])
+          RMSDs.append(l[9])
+          paramline = False
+
+    if not found:
+      print(f"WARNING! No parameters found in {filename}.")
+      MDs.append("NaN")
+      MADs.append("NaN")
+      RMSDs.append("NaN")
+
+  data = []
+  for i, omega in enumerate(omegas):
+    data.append([omega, MDs[i], MADs[i], RMSDs[i],])
+
+  cols = ["omega", "MD", "MAD", "RMSD"]
+  df = pd.DataFrame(columns=cols, data=data)
+  print(df.to_string(index=False))
+
+  if args.save:
+    out_file = f"stat_{Path.cwd().name.lower()}_fit.csv"
+    save_loc = os.path.join(os.path.realpath("."), out_file)
+    df.to_csv(save_loc, index=False)
+    print("\nSaved data to {}.".format(save_loc))
+
+
+def main():
+  parser = argparse.ArgumentParser(description="Get statistical data.")
+  parser.add_argument("-f", "--fit", action="store_true", help="Statistics from fit job.")
+  parser.add_argument("-s", "--save", action="store_true", help="Save output.")
+  args = parser.parse_args()
+
+  if args.fit:
+    stat_fit(args)
+  else:
+    stat_no_d4(args)
+  
+
+if __name__ == '__main__':
+  main()

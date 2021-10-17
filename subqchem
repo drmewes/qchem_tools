@@ -58,7 +58,6 @@ function testFile {
 
 while getopts adhj:m:N:p:n:q:t: options; do
   case $options in
-
   N)
     jobnamefix=$OPTARG
     ;;
@@ -252,7 +251,6 @@ if [ -z "$jobhold" ]; then
   optionstring=""
 else
   optionstring="-W depend=afterok:$holdid"
-
 fi
 
 inname=$(basename $infile)
