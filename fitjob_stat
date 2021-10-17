@@ -31,39 +31,69 @@ def rmsd(data):
   return np.sqrt(np.mean(np.square(data)))
 
 
-def stat_no_d4(args):
-  # setting some variables
-  omegas = [100, 150, 200, 250, 300, 350, 400, 450]
+def getOmegas(test_file="NCIBLIND10/1-A/job.out"):
+  count_criter = 0
+  o = []
+
+  path = Path(test_file)
+
+  if not path.is_file():
+    print(f"WARNING! Test file '{test_file}' not found. Using default omegas.")
+    omegas = [100, 150, 200, 250, 300, 350, 400, 450]
+    return omegas[::-1]
+
+
+  with open(path) as f:
+    for line in f:
+      if line.startswith("omega"):
+        o.append(int(line.strip().split()[1]))
+
+      if "Convergence criterion met" in line:
+        count_criter += 1
+
+    # check convergence for my multijob
+    if count_criter != len(o):
+      sys.exit(f"Convergence not reached in {test_file}.")
+
+  return o
+
+
+def getDataTestSet(set_name, omegas, num_decimals=4):
+  factor = 627.50947428
   num_jobs = len(omegas)
 
-  factor = 627.50947428
-  num_decimals = 4
+  df = pd.read_csv(f"{set_name}/ref.csv", dtype={"dimer": str})
+  set_list = df["dimer"].to_list()
+  set_ref = df["reference"].to_list()
+
   data = []
 
-  # Reading in reference data
-  nci = pd.read_csv("NCIBLIND10/ref.csv", dtype={"dimer": str})
-  nci_list = nci["dimer"].to_list()
-  nci_ref = nci["reference"].to_list()
+  for i, d in enumerate(set_list):
+    dimer = f"{set_name}/{d}"
 
-  s22x5 = pd.read_csv("S22x5/ref.csv", dtype={"dimer": str})
-  s22x5_list = s22x5["dimer"].to_list()
-  s22x5_ref = s22x5["reference"].to_list()
+    if set_name == "S22x5":
+      monoA = f"{set_name}/{d.split('_')[0]}A"
+      monoB = f"{set_name}/{d.split('_')[0]}B"
+    elif set_name == "S66x8":
+      monoA = f"{set_name}/{d.split('.')[0]}A"
+      monoB = f"{set_name}/{d.split('.')[0]}B"
+    elif set_name == "NCIBLIND10":
+      if int(d) < 100:
+        monoA = f"NCIBLIND10/{d[0]}A"
+        monoB = f"NCIBLIND10/{d[0]}B"
+      else:
+        monoA = "NCIBLIND10/10A"
+        monoB = "NCIBLIND10/10B"
 
-  s66x8 = pd.read_csv("S66x8/ref.csv", dtype={"dimer": str})
-  s66x8_list = s66x8["dimer"].to_list()
-  s66x8_ref = s66x8["reference"].to_list()
-
-  # S22x5
-  for i, d in enumerate(s22x5_list):
-    dimer = f"S22x5/{d}"
-    monoA = f"S22x5/{d.split('_')[0]}A"
-    monoB = f"S22x5/{d.split('_')[0]}B"
 
     e_dimer = []
-    with open(Path(f"{dimer}/job.out"), errors='ignore') as f:
-      count_criter = 0
-
+    o = []
+    count_criter = 0
+    with open(Path(f"{dimer}/job.out")) as f:
       for line in f:
+        if line.startswith("omega"):
+          o.append(int(line.strip().split()[1]))
+
         if "Convergence criterion met" in line:
           energy = line.split()[1]
           e_dimer.append(float(energy))
@@ -71,13 +101,22 @@ def stat_no_d4(args):
 
       # check convergence for my multijob
       if count_criter != num_jobs:
-        sys.exit()
+        sys.exit(f"Convergence not reached in {system}.")
+
+      # check order of omegas
+      if o != omegas:
+        sys.exit("Order of omegas wrong!")
 
     e_monoA = []
-    with open(Path(f"{monoA}/job.out"), errors='ignore') as f:
+    o = []
+    count_criter = 0
+    with open(Path(f"{monoA}/job.out")) as f:
       count_criter = 0
 
       for line in f:
+        if line.startswith("omega"):
+          o.append(int(line.strip().split()[1]))
+
         if "Convergence criterion met" in line:
           energy = line.split()[1]
           e_monoA.append(float(energy))
@@ -85,13 +124,23 @@ def stat_no_d4(args):
 
       # check convergence for my multijob
       if count_criter != num_jobs:
-        sys.exit()
+        sys.exit(f"Convergence not reached in {system}.")
+
+      # check order of omegas
+      if o != omegas:
+        sys.exit("Order of omegas wrong!")
+
 
     e_monoB = []
-    with open(Path(f"{monoB}/job.out"), errors='ignore') as f:
+    o = []
+    count_criter = 0
+    with open(Path(f"{monoB}/job.out")) as f:
       count_criter = 0
 
       for line in f:
+        if line.startswith("omega"):
+          o.append(int(line.strip().split()[1]))
+
         if "Convergence criterion met" in line:
           energy = line.split()[1]
           e_monoB.append(float(energy))
@@ -99,121 +148,32 @@ def stat_no_d4(args):
 
       # check convergence for my multijob
       if count_criter != num_jobs:
-        sys.exit()
+        sys.exit(f"Convergence not reached in {system}.")
+
+      # check order of omegas
+      if o != omegas:
+        sys.exit("Order of omegas wrong!")
 
 
-    e = (np.asarray(e_dimer) - np.asarray(e_monoA) - np.asarray(e_monoB))*factor - s22x5_ref[i]
+    e = (np.asarray(e_dimer) - np.asarray(e_monoA) - np.asarray(e_monoB))*factor - set_ref[i]
     data.append([dimer] + e.tolist())
 
-
-  # S66x8
-  for i, d in enumerate(s66x8_list):
-    dimer = f"S66x8/{d}"
-    monoA = f"S66x8/{d.split('.')[0]}A"
-    monoB = f"S66x8/{d.split('.')[0]}B"
-
-    e_dimer = []
-    with open(Path(f"{dimer}/job.out"), errors='ignore') as f:
-      count_criter = 0
-
-      for line in f:
-        if "Convergence criterion met" in line:
-          energy = line.split()[1]
-          e_dimer.append(float(energy))
-          count_criter += 1
-
-      # check convergence for my multijob
-      if count_criter != num_jobs:
-        sys.exit()
-
-    e_monoA = []
-    with open(Path(f"{monoA}/job.out"), errors='ignore') as f:
-      count_criter = 0
-
-      for line in f:
-        if "Convergence criterion met" in line:
-          energy = line.split()[1]
-          e_monoA.append(float(energy))
-          count_criter += 1
-
-      # check convergence for my multijob
-      if count_criter != num_jobs:
-        sys.exit()
-
-    e_monoB = []
-    with open(Path(f"{monoB}/job.out"), errors='ignore') as f:
-      count_criter = 0
-
-      for line in f:
-        if "Convergence criterion met" in line:
-          energy = line.split()[1]
-          e_monoB.append(float(energy))
-          count_criter += 1
-
-      # check convergence for my multijob
-      if count_criter != num_jobs:
-        sys.exit()
-
-    e = (np.asarray(e_dimer) - np.asarray(e_monoA) - np.asarray(e_monoB))*factor - s66x8_ref[i]
-    data.append([dimer] + e.tolist())
+  return data
 
 
-  # NCIBLIND10
-  for i, d in enumerate(nci_list):
-    dimer = f"NCIBLIND10/{d}"
+def stat_no_d4(args):
+  num_decimals = 4
+  
+  omegas = getOmegas()
+  print(f"Found {len(omegas)} omega values: {omegas}\n")
 
-    if int(d) < 100:
-      monoA = f"NCIBLIND10/{d[0]}A"
-      monoB = f"NCIBLIND10/{d[0]}B"
-    else:
-      monoA = "NCIBLIND10/10A"
-      monoB = "NCIBLIND10/10B"
+  # get data
+  s22x5 = getDataTestSet("S22x5", omegas)
+  s66x8 = getDataTestSet("S66x8", omegas)
+  nci = getDataTestSet("NCIBLIND10", omegas)
 
-    e_dimer = []
-    with open(Path(f"{dimer}/job.out"), errors='ignore') as f:
-      count_criter = 0
-
-      for line in f:
-        if "Convergence criterion met" in line:
-          energy = line.split()[1]
-          e_dimer.append(float(energy))
-          count_criter += 1
-
-      # check convergence for my multijob
-      if count_criter != num_jobs:
-        sys.exit()
-
-    e_monoA = []
-    with open(Path(f"{monoA}/job.out"), errors='ignore') as f:
-      count_criter = 0
-
-      for line in f:
-        if "Convergence criterion met" in line:
-          energy = line.split()[1]
-          e_monoA.append(float(energy))
-          count_criter += 1
-
-      # check convergence for my multijob
-      if count_criter != num_jobs:
-        sys.exit()
-
-    e_monoB = []
-    with open(Path(f"{monoB}/job.out"), errors='ignore') as f:
-      count_criter = 0
-
-      for line in f:
-        if "Convergence criterion met" in line:
-          energy = line.split()[1]
-          e_monoB.append(float(energy))
-          count_criter += 1
-
-      # check convergence for my multijob
-      if count_criter != num_jobs:
-        sys.exit()
-
-    e = (np.asarray(e_dimer) - np.asarray(e_monoA) - np.asarray(e_monoB))*factor - nci_ref[i]
-    data.append([dimer] + e.tolist())
-
+  # chain data together
+  data = s22x5 + s66x8 + nci
 
   # show data
   data = np.asarray(data)

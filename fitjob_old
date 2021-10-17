@@ -1,0 +1,230 @@
+#!/usr/bin/env python3
+# coding: utf-8
+
+import sys
+from pathlib import Path
+
+try:
+  import pandas as pd
+except ModuleNotFoundError:
+  sys.exit("Module 'pandas' not installed. Exiting.")
+
+try:
+  import numpy as np
+except ModuleNotFoundError:
+  sys.exit("Module 'numpy' not installed. Exiting.")
+
+
+def main():
+  # setting some variables
+  omegas = [100, 150, 200, 250, 300, 350, 400, 450]
+  num_jobs = len(omegas)
+  cols = ["tmer", "dimer", "mono A", "monoB", "energy"]
+
+  factor = 627.50947428
+  num_decimals = 4
+  out_file = f"res_{Path.cwd().name.lower()}"
+  data = []
+
+  # Reading in reference data
+  nci = pd.read_csv("NCIBLIND10/ref.csv", dtype={"dimer": str})
+  nci_list = nci["dimer"].to_list()
+  nci_ref = nci["reference"].to_list()
+
+  s22x5 = pd.read_csv("S22x5/ref.csv", dtype={"dimer": str})
+  s22x5_list = s22x5["dimer"].to_list()
+  s22x5_ref = s22x5["reference"].to_list()
+
+  s66x8 = pd.read_csv("S66x8/ref.csv", dtype={"dimer": str})
+  s66x8_list = s66x8["dimer"].to_list()
+  s66x8_ref = s66x8["reference"].to_list()
+
+
+  # S22x5
+  for i, d in enumerate(s22x5_list):
+    dimer = f"S22x5/{d}"
+    monoA = f"S22x5/{d.split('_')[0]}A"
+    monoB = f"S22x5/{d.split('_')[0]}B"
+
+    e_dimer = []
+    with open(Path(f"{dimer}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_dimer.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    e_monoA = []
+    with open(Path(f"{monoA}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_monoA.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    e_monoB = []
+    with open(Path(f"{monoB}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_monoB.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    temp = ["$tmer", f"{dimer}/${{f}}", f"{monoA}/${{f}}", f"{monoB}/${{f}}"]
+    for j in range(num_jobs):
+      e = (e_dimer[j] - e_monoA[j] - e_monoB[j])*factor - s22x5_ref[i] 
+      temp.append(np.around(e, decimals=num_decimals))
+
+    data.append(temp)
+
+
+  # S66x8
+  for i, d in enumerate(s66x8_list):
+    dimer = f"S66x8/{d}"
+    monoA = f"S66x8/{d.split('.')[0]}A"
+    monoB = f"S66x8/{d.split('.')[0]}B"
+
+    e_dimer = []
+    with open(Path(f"{dimer}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_dimer.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    e_monoA = []
+    with open(Path(f"{monoA}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_monoA.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    e_monoB = []
+    with open(Path(f"{monoB}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_monoB.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    temp = ["$tmer", f"{dimer}/${{f}}", f"{monoA}/${{f}}", f"{monoB}/${{f}}"]
+    for j in range(num_jobs):
+      e = (e_dimer[j] - e_monoA[j] - e_monoB[j])*factor - s66x8_ref[i] 
+      temp.append(np.around(e, decimals=num_decimals))
+
+    data.append(temp)
+
+
+  # NCIBLIND10
+  for i, d in enumerate(nci_list):
+    dimer = f"NCIBLIND10/{d}"
+
+    if int(d) < 100:
+      monoA = f"NCIBLIND10/{d[0]}A"
+      monoB = f"NCIBLIND10/{d[0]}B"
+    else:
+      monoA = "NCIBLIND10/10A"
+      monoB = "NCIBLIND10/10B"
+
+    e_dimer = []
+    with open(Path(f"{dimer}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_dimer.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    e_monoA = []
+    with open(Path(f"{monoA}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_monoA.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    e_monoB = []
+    with open(Path(f"{monoB}/job.out"), errors='ignore') as f:
+      count_criter = 0
+
+      for line in f:
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e_monoB.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit()
+
+    temp = ["$tmer", f"{dimer}/${{f}}", f"{monoA}/${{f}}", f"{monoB}/${{f}}"]
+    for j in range(num_jobs):
+      e = (e_dimer[j] - e_monoA[j] - e_monoB[j])*factor - nci_ref[i]
+      temp.append(np.around(e, decimals=num_decimals))
+
+    data.append(temp)
+
+
+  # Save data
+  data = np.asarray(data, dtype=str)
+  
+  for i, omega in enumerate(omegas):
+    np.savetxt(f"old_{out_file}_{omega}.sh", data[:, [0, 1, 2, 3, i + 4]], delimiter=" ", fmt="%s")
+    print(f"Saving fit template for omega={omega} to '{out_file}_{omega}.sh'.")
+
+
+    #df = pd.DataFrame(columns=cols, data=data[:, [0, 1, 2, 3, i + 4]])
+    #df.to_csv(f"{out_file}_{omega}.sh", index=False, header=False, sep=" ")
+
+
+
+if __name__ == '__main__':
+  main()

@@ -14,7 +14,7 @@ except ModuleNotFoundError:
 
 def main():
   parser = argparse.ArgumentParser(
-      description='Q-CHEM JOB INFO\nSearch recursively for all .out files and get general info.')
+      description='Search recursively for all res files and get percentage of negative values.')
   parser.add_argument("-s", "--save", nargs='?', const="neg_vals.csv", type=str,
                       help="Save output. Name is optional. Defaults to 'neg_vals.csv'.")
   args = parser.parse_args()
