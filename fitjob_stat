@@ -17,18 +17,20 @@ except ModuleNotFoundError:
   sys.exit("Module 'numpy' not installed. Exiting.")
 
 
+def md(error):
+  # md = mean(error)
+  return np.mean(error)
 
-def md(data, axis=None):
-  return np.mean(data, axis)
+def mad(error):
+  # mad = mean( abs( error - mean(error) ) )
+  return np.mean(np.absolute(error - np.mean(error)))
 
-def mad(data, axis=None):
-  return np.mean(np.absolute(data - np.mean(data, axis)), axis)
+def stdev(error):
+  # std = sqrt( mean( abs( error - mean(error) )**2 ) )
+  return np.std(error, dtype=np.float64)
 
-def mae(data):
-  return np.mean(np.absolute(data))
-
-def rmsd(data):
-  return np.sqrt(np.mean(np.square(data)))
+def rmsd(error):
+  return np.sqrt(np.mean(np.square(error)))
 
 
 def getOmegas(test_file="NCIBLIND10/01-A/job.out"):
@@ -185,17 +187,20 @@ def stat_no_d4(args):
   MDs = []
   MADs = []
   RMSDs = []
+  STDs = []
 
   for col in cols:
-    MDs.append(md(df[col]))
-    MADs.append(mad(df[col]))
-    RMSDs.append(rmsd(df[col]))
+    l = df[col].to_list()
+    MDs.append(md(l))
+    MADs.append(mad(l))
+    RMSDs.append(rmsd(l))
+    STDs.append(stdev(l))
 
   data = []
   for i, omega in enumerate(omegas):
-    data.append([omega, MDs[i], MADs[i], RMSDs[i],])
+    data.append([omega, MDs[i], MADs[i], RMSDs[i], STDs[i]])
 
-  df = pd.DataFrame(columns=["omega", "MD", "MAD", "RMSD"], data=data)
+  df = pd.DataFrame(columns=["omega", "MD", "MAD", "RMSD", "STD"], data=data)
 
   cols = [i for i in df.columns if i != "measure"]
   for col in cols:

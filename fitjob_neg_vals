@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
+# USE: Execute somewhere. (Searches recursively.)
+
+
 import sys
 from pathlib import Path
 import argparse
@@ -14,7 +17,7 @@ except ModuleNotFoundError:
 
 def main():
   parser = argparse.ArgumentParser(
-      description='Search recursively for all res files and get percentage of negative values.')
+      description='Search recursively for all "res" files and get percentage of negative values.')
   parser.add_argument("-s", "--save", nargs='?', const="neg_vals.csv", type=str,
                       help="Save output. Name is optional. Defaults to 'neg_vals.csv'.")
   args = parser.parse_args()
