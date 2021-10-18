@@ -31,7 +31,7 @@ def rmsd(data):
   return np.sqrt(np.mean(np.square(data)))
 
 
-def getOmegas(test_file="NCIBLIND10/1-A/job.out"):
+def getOmegas(test_file="NCIBLIND10/01-A/job.out"):
   count_criter = 0
   o = []
 
@@ -70,21 +70,8 @@ def getDataTestSet(set_name, omegas, num_decimals=4):
 
   for i, d in enumerate(set_list):
     dimer = f"{set_name}/{d}"
-
-    if set_name == "S22x5":
-      monoA = f"{set_name}/{d.split('_')[0]}A"
-      monoB = f"{set_name}/{d.split('_')[0]}B"
-    elif set_name == "S66x8":
-      monoA = f"{set_name}/{d.split('.')[0]}A"
-      monoB = f"{set_name}/{d.split('.')[0]}B"
-    elif set_name == "NCIBLIND10":
-      if int(d) < 100:
-        monoA = f"NCIBLIND10/{d[0]}A"
-        monoB = f"NCIBLIND10/{d[0]}B"
-      else:
-        monoA = "NCIBLIND10/10A"
-        monoB = "NCIBLIND10/10B"
-
+    monoA = f"{set_name}/{d.split('-')[0]}-A"
+    monoB = f"{set_name}/{d.split('-')[0]}-B"
 
     e_dimer = []
     o = []
@@ -215,6 +202,7 @@ def stat_no_d4(args):
     df[col] = pd.to_numeric(df[col])
 
   df = df.round(num_decimals)
+  df = df.iloc[::-1]
   print("\n")
   print("Statistics")
   print("----------")

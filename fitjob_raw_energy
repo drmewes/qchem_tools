@@ -928,7 +928,7 @@ def systemList():
           'NCIBLIND10/10-16']
 
 
-def getOmegas(test_file="NCIBLIND10/1-A/job.out"):
+def getOmegas(test_file="NCIBLIND10/01-A/job.out"):
   count_criter = 0
   o = []
 

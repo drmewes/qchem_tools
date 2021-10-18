@@ -15,7 +15,7 @@ except ModuleNotFoundError:
   sys.exit("Module 'numpy' not installed. Exiting.")
 
 
-def getOmegas(test_file="NCIBLIND10/1-A/job.out"):
+def getOmegas(test_file="NCIBLIND10/01-A/job.out"):
   count_criter = 0
   o = []
 
