@@ -5,8 +5,8 @@
 
 
 import sys
-from pathlib import Path
 import argparse
+from pathlib import Path
 
 try:
   import numpy as np
@@ -942,7 +942,6 @@ def getOmegas(test_file="NCIBLIND10/01-A/job.out"):
     omegas = [100, 150, 200, 250, 300, 350, 400, 450]
     return omegas[::-1]
 
-
   with open(path) as f:
     for line in f:
       if line.startswith("omega"):
@@ -989,7 +988,7 @@ def main():
     if not path.is_file():
       print(f"WARNING!!! File {path} not found. Skipping...")
       continue
-      
+
     with open(path) as f:
       count_criter = 0
       e = []
@@ -1017,8 +1016,7 @@ def main():
 
   # Save data
   data = np.asarray(data, dtype=str)
-  np.savetxt(f"{func.lower()}-omegas.csv",
-             data, delimiter=",", fmt="%s")
+  np.savetxt(f"{func.lower()}-omegas.csv", data, delimiter=",", fmt="%s")
 
 
 if __name__ == '__main__':

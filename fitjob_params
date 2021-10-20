@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-from glob import glob
 import os
 import sys
 import argparse
+from pathlib import Path
 
 
 def getFileList():
   filelist = []
-  for file in sorted(glob('./*d4*.out')):
+  for file in sorted(Path(".").glob('*d4*.out')):
     filelist.append(file)
 
   if len(filelist) == 0:
@@ -56,7 +56,6 @@ def main():
       data.append([filename, "NaN", "NaN", "NaN"])
     else:
       data.append([filename, s8, a1, a2])
-
 
   # printing and saving
   cols = ["file", "s8", "a1", "a2"]

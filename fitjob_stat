@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-import sys
 import os
-from pathlib import Path
+import sys
 import argparse
+from pathlib import Path
 
 try:
   import pandas as pd
@@ -21,13 +21,16 @@ def md(error):
   # md = mean(error)
   return np.mean(error)
 
+
 def mad(error):
   # mad = mean( abs( error - mean(error) ) )
   return np.mean(np.absolute(error - np.mean(error)))
 
+
 def stdev(error):
   # std = sqrt( mean( abs( error - mean(error) )**2 ) )
   return np.std(error, dtype=np.float64)
+
 
 def rmsd(error):
   return np.sqrt(np.mean(np.square(error)))
@@ -43,7 +46,6 @@ def getOmegas(test_file="NCIBLIND10/01-A/job.out"):
     print(f"WARNING! Test file '{test_file}' not found. Using default omegas.")
     omegas = [100, 150, 200, 250, 300, 350, 400, 450]
     return omegas[::-1]
-
 
   with open(path) as f:
     for line in f:
@@ -98,7 +100,7 @@ def getEnergyFromFile(path, omegas):
   return e
 
 
-def getDataTestSet(set_name, omegas, num_decimals=4):
+def getDataTestSet(set_name, omegas):
   factor = 627.50947428
 
   df = pd.read_csv(f"{set_name}/ref.csv", dtype={"dimer": str})
@@ -115,7 +117,8 @@ def getDataTestSet(set_name, omegas, num_decimals=4):
     e_monoA = getEnergyFromFile(monoA, omegas)
     e_monoB = getEnergyFromFile(monoB, omegas)
 
-    e = (np.asarray(e_dimer) - np.asarray(e_monoA) - np.asarray(e_monoB))*factor - set_ref[i]
+    e = (np.asarray(e_dimer) - np.asarray(e_monoA) -
+         np.asarray(e_monoB))*factor - set_ref[i]
     data.append([dimer] + e.tolist())
 
   return data
@@ -123,7 +126,7 @@ def getDataTestSet(set_name, omegas, num_decimals=4):
 
 def stat_no_d4(args):
   num_decimals = 4
-  
+
   omegas = getOmegas()
   print(f"Found {len(omegas)} omega values: {omegas}\n")
 
@@ -145,11 +148,10 @@ def stat_no_d4(args):
     df[col] = pd.to_numeric(df[col])
 
   df = df.round(num_decimals)
-  
+
   print(f"Data: E_int - E_ref for {Path.cwd().name}")
   print("---------------------------------")
   print(df)
-
 
   ####################
   ## Get Statistics ##
@@ -189,7 +191,7 @@ def stat_no_d4(args):
     save_loc = os.path.join(os.path.realpath("."), out_file)
     df.to_csv(save_loc, index=False)
     print("\nSaved data to {}.".format(save_loc))
-  
+
 
 def stat_fit(args):
   omegas = [100, 150, 200, 250, 300, 350, 400, 450]
@@ -222,7 +224,7 @@ def stat_fit(args):
 
   data = []
   for i, omega in enumerate(omegas):
-    data.append([omega, MDs[i], MADs[i], RMSDs[i],])
+    data.append([omega, MDs[i], MADs[i], RMSDs[i], ])
 
   cols = ["omega", "MD", "MAD", "RMSD"]
   df = pd.DataFrame(columns=cols, data=data)
@@ -237,7 +239,8 @@ def stat_fit(args):
 
 def main():
   parser = argparse.ArgumentParser(description="Get statistical data.")
-  parser.add_argument("-f", "--fit", action="store_true", help="Statistics from fit job.")
+  parser.add_argument("-f", "--fit", action="store_true",
+                      help="Statistics from fit job.")
   parser.add_argument("-s", "--save", action="store_true", help="Save output.")
   args = parser.parse_args()
 
@@ -245,7 +248,7 @@ def main():
     stat_fit(args)
   else:
     stat_no_d4(args)
-  
+
 
 if __name__ == '__main__':
   main()

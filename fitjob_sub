@@ -9,6 +9,9 @@ default_queue="single"
 default_jobtime=10
 default_memory=8
 
+D4="\$HOME/projects/d4-param/QZVP/FIT"
+
+
 function usage {
 echo "Usage: $PGM_NAME [t TIME]  [-m SIZE] [-N NAME] [-p CPUS] [-n NODES] INPUT_FILE"
 exit 2
@@ -130,7 +133,7 @@ cat <<-EOT >>$scriptfile
 cd \$PBS_O_WORKDIR
 
 # dirs
-D4=\$HOME/projects/d4-param/FIT
+D4=$D4
 TMP_DIR=/tmp1/\$USER
 DIR1=\$PWD
 

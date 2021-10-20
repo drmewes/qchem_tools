@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-# USE: Execute in diretory where the three test sets are.
+# Creates a 'res' file which can be read by the D4 fit program. To call the
+# fit program use 'fitjob_sub res_xyz.sh'.
+# (Do not forget 'chmod +x res_xyz.sh'.)
+#
+# Execute in diretory where the three test sets are.
 
 
 import sys
@@ -28,7 +32,6 @@ def getOmegas(test_file="NCIBLIND10/01-A/job.out"):
     print(f"WARNING! Test file '{test_file}' not found. Using default omegas.")
     omegas = [100, 150, 200, 250, 300, 350, 400, 450]
     return omegas[::-1]
-
 
   with open(path) as f:
     for line in f:
@@ -102,7 +105,7 @@ def getDataTestSet(set_name, omegas, num_decimals=4):
 
     temp = ["$tmer", f"{dimer}/${{f}}", f"{monoA}/${{f}}", f"{monoB}/${{f}}"]
     for j in range(len(omegas)):
-      e = (e_dimer[j] - e_monoA[j] - e_monoB[j])*factor - set_ref[i] 
+      e = (e_dimer[j] - e_monoA[j] - e_monoB[j])*factor - set_ref[i]
       temp.append(np.around(e, decimals=num_decimals))
 
     data.append(temp)
@@ -128,7 +131,8 @@ def main():
   out_file = f"res_{Path.cwd().name.lower()}"
 
   for i, omega in enumerate(omegas):
-    np.savetxt(f"{out_file}_{omega}.sh", data[:, [0, 1, 2, 3, i + 4]], delimiter=" ", fmt="%s")
+    np.savetxt(f"{out_file}_{omega}.sh",
+               data[:, [0, 1, 2, 3, i + 4]], delimiter=" ", fmt="%s")
     print(f"Saving fit template for omega={omega} to '{out_file}_{omega}.sh'.")
 
 
