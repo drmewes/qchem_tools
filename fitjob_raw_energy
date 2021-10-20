@@ -985,7 +985,12 @@ def main():
   data = [["system"] + cols]
 
   for system in systemList():
-    with open(Path(f"{system}/job.out")) as f:
+    path = Path(f"{system}/job.out")
+    if not path.is_file():
+      print(f"WARNING!!! File {path} not found. Skipping...")
+      continue
+      
+    with open(path) as f:
       count_criter = 0
       e = []
       o = []

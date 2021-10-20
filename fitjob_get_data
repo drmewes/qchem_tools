@@ -38,6 +38,10 @@ def getOmegas(test_file="NCIBLIND10/01-A/job.out"):
       if "Convergence criterion met" in line:
         count_criter += 1
 
+    # job with no omegas
+    if len(o) == 0:
+      o = [0]
+
     # check convergence for my multijob
     if count_criter != len(o):
       sys.exit(f"Convergence not reached in {test_file}.")
@@ -45,91 +49,59 @@ def getOmegas(test_file="NCIBLIND10/01-A/job.out"):
   return o
 
 
+def getEnergyFromFile(path, omegas):
+  path = Path(f"{path}/job.out")
+
+  if not path.is_file():
+    print(f"WARNING!!! File {path} not found. Skipping...")
+    return
+
+  e = []
+  o = []
+  count_criter = 0
+  num_jobs = len(omegas)
+
+  with open(path) as f:
+    for line in f:
+      if line.startswith("omega"):
+        o.append(int(line.strip().split()[1]))
+
+      if "Convergence criterion met" in line:
+        energy = line.split()[1]
+        e.append(float(energy))
+        count_criter += 1
+
+    # check convergence for my multijob
+    if count_criter != num_jobs:
+      sys.exit(f"Convergence not reached in {path}.")
+
+    # check order of omegas
+    if omegas[0] != 0:
+      if o != omegas:
+        sys.exit("Order of omegas wrong!")
+
+  return e
+
+
 def getDataTestSet(set_name, omegas, num_decimals=4):
   factor = 627.50947428
-  num_jobs = len(omegas)
 
   df = pd.read_csv(f"{set_name}/ref.csv", dtype={"dimer": str})
   set_list = df["dimer"].to_list()
   set_ref = df["reference"].to_list()
 
   data = []
-
   for i, d in enumerate(set_list):
     dimer = f"{set_name}/{d}"
     monoA = f"{set_name}/{d.split('-')[0]}-A"
     monoB = f"{set_name}/{d.split('-')[0]}-B"
 
-    e_dimer = []
-    o = []
-    count_criter = 0
-    with open(Path(f"{dimer}/job.out")) as f:
-      for line in f:
-        if line.startswith("omega"):
-          o.append(int(line.strip().split()[1]))
-
-        if "Convergence criterion met" in line:
-          energy = line.split()[1]
-          e_dimer.append(float(energy))
-          count_criter += 1
-
-      # check convergence for my multijob
-      if count_criter != num_jobs:
-        sys.exit(f"Convergence not reached in {system}.")
-
-      # check order of omegas
-      if o != omegas:
-        sys.exit("Order of omegas wrong!")
-
-    e_monoA = []
-    o = []
-    count_criter = 0
-    with open(Path(f"{monoA}/job.out")) as f:
-      count_criter = 0
-
-      for line in f:
-        if line.startswith("omega"):
-          o.append(int(line.strip().split()[1]))
-
-        if "Convergence criterion met" in line:
-          energy = line.split()[1]
-          e_monoA.append(float(energy))
-          count_criter += 1
-
-      # check convergence for my multijob
-      if count_criter != num_jobs:
-        sys.exit(f"Convergence not reached in {system}.")
-
-      # check order of omegas
-      if o != omegas:
-        sys.exit("Order of omegas wrong!")
-
-    e_monoB = []
-    o = []
-    count_criter = 0
-    with open(Path(f"{monoB}/job.out")) as f:
-      count_criter = 0
-
-      for line in f:
-        if line.startswith("omega"):
-          o.append(int(line.strip().split()[1]))
-
-        if "Convergence criterion met" in line:
-          energy = line.split()[1]
-          e_monoB.append(float(energy))
-          count_criter += 1
-
-      # check convergence for my multijob
-      if count_criter != num_jobs:
-        sys.exit(f"Convergence not reached in {system}.")
-
-      # check order of omegas
-      if o != omegas:
-        sys.exit("Order of omegas wrong!")
-
+    e_dimer = getEnergyFromFile(dimer, omegas)
+    e_monoA = getEnergyFromFile(monoA, omegas)
+    e_monoB = getEnergyFromFile(monoB, omegas)
 
     temp = ["$tmer", f"{dimer}/${{f}}", f"{monoA}/${{f}}", f"{monoB}/${{f}}"]
-    for j in range(num_jobs):
+    for j in range(len(omegas)):
       e = (e_dimer[j] - e_monoA[j] - e_monoB[j])*factor - set_ref[i] 
       temp.append(np.around(e, decimals=num_decimals))
 

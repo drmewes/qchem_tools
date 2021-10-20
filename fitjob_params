@@ -29,7 +29,12 @@ def main():
 
   data = []
   for filename in getFileList():
-    with open(filename, errors="ignore") as f:
+    path = Path(filename)
+    if not path.is_file():
+      print(f"WARNING!!! File {path} not found. Skipping...")
+      continue
+
+    with open(path) as f:
       paramblock = False
 
       for line in f:
@@ -62,7 +67,7 @@ def main():
     df = pd.DataFrame(columns=cols, data=data)
 
     # print to console
-    if args.verbose:
+    if args.verbose is not None:
       if args.verbose == 0:
         pd.set_option('display.max_rows', df.shape[0] + 1)
         print(df)
@@ -87,7 +92,7 @@ def main():
 
       # print to console
       print("")
-      if args.verbose:
+      if args.verbose is not None:
         if args.verbose != 0:
           data = data[:(args.verbose + 1)]
         print('\n'.join(' '.join(str(x) for x in row) for row in data))
