@@ -194,7 +194,7 @@ def stat_no_d4(args):
 
 
 def stat_fit(args):
-  omegas = [100, 150, 200, 250, 300, 350, 400, 450]
+  omegas = []
   MDs = []
   MADs = []
   RMSDs = []
@@ -203,6 +203,11 @@ def stat_fit(args):
     paramline = False
     found = False
     with open(filename) as f:
+      omega = filename.name.split("_")[1]
+      if not omega.isdigit():
+        omega = 0
+      omegas.append(omega)
+
       for line in f:
         if line.startswith("Final run:"):
           paramline = True
