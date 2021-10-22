@@ -962,6 +962,8 @@ def main():
       description="Get raw electronic energy from the three test sets.")
   parser.add_argument("-r", "--reverse", action="store_true",
                       help="Manually reverse order of omegas.")
+  parser.add_argument("-v", "--verbose", action="store_true",
+                      help="Print more.")
   args = parser.parse_args()
 
   func = Path.cwd().name
@@ -1014,9 +1016,14 @@ def main():
 
     data.append([system] + e)
 
+    if args.verbose:
+      print([system] + e)
+
   # Save data
   data = np.asarray(data, dtype=str)
-  np.savetxt(f"{func.lower()}-omegas.csv", data, delimiter=",", fmt="%s")
+  for i, omega in enumerate(omegas):
+    np.savetxt(f"{func}_{omega}.csv", data[:, [0, i + 1]], delimiter=",", fmt="%s")
+    print(f"Saving raw energies for omega={omega} to '{func}_{omega}.csv'.")
 
 
 if __name__ == '__main__':

@@ -27,6 +27,11 @@ def mad(error):
   return np.mean(np.absolute(error - np.mean(error)))
 
 
+def mae(error):
+  # mae = mean( abs( error ) )
+  return np.mean(np.absolute(error))
+
+
 def stdev(error):
   # std = sqrt( mean( abs( error - mean(error) )**2 ) )
   return np.std(error, dtype=np.float64)
@@ -158,20 +163,20 @@ def stat_no_d4(args):
   ####################
 
   MDs = []
-  MADs = []
+  MAEs = []
   RMSDs = []
   STDs = []
 
   for col in cols:
     l = df[col].to_list()
     MDs.append(md(l))
-    MADs.append(mad(l))
+    MAEs.append(mae(l))
     RMSDs.append(rmsd(l))
     STDs.append(stdev(l))
 
   data = []
   for i, omega in enumerate(omegas):
-    data.append([omega, MDs[i], MADs[i], RMSDs[i], STDs[i]])
+    data.append([omega, MDs[i], MAEs[i], RMSDs[i], STDs[i]])
 
   df = pd.DataFrame(columns=["omega", "MD", "MAD", "RMSD", "STD"], data=data)
 
@@ -196,7 +201,7 @@ def stat_no_d4(args):
 def stat_fit(args):
   omegas = []
   MDs = []
-  MADs = []
+  MAEs = []
   RMSDs = []
 
   for filename in sorted(Path(".").glob("*d4*.out")):
@@ -217,19 +222,19 @@ def stat_fit(args):
         if paramline:
           l = line.strip().split()
           MDs.append(l[5])
-          MADs.append(l[7])
+          MAEs.append(l[7])
           RMSDs.append(l[9])
           paramline = False
 
     if not found:
       print(f"WARNING! No parameters found in {filename}.")
       MDs.append("NaN")
-      MADs.append("NaN")
+      MAEs.append("NaN")
       RMSDs.append("NaN")
 
   data = []
   for i, omega in enumerate(omegas):
-    data.append([omega, MDs[i], MADs[i], RMSDs[i], ])
+    data.append([omega, MDs[i], MAEs[i], RMSDs[i], ])
 
   cols = ["omega", "MD", "MAD", "RMSD"]
   df = pd.DataFrame(columns=cols, data=data)
