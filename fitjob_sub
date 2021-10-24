@@ -184,10 +184,15 @@ printf '%dh:%dm:%02ds\n' \$((\$secs / 3600)) \$((\$secs % 3600 / 60)) \$((\$secs
 #####################################################################################
 #copy everything back that is smaller than 5 gbytes
 
+mv .data ${infile}_for_stat
 rsync -q --bwlimit=5000 --max-size=5G \$TMP_DIR/\$PBS_JOBID/* \$DIR1/
 
 cd \$DIR1
 rm -r \$TMP_DIR/\$PBS_JOBID
+
+# my statistics stuff
+./stat_final ${infile}_for_stat > stat_${infile}.txt
+rm -f ${infile}_for_stat
 EOT
 
 
