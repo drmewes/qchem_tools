@@ -950,6 +950,10 @@ def getOmegas(test_file="NCIBLIND10/01-A/job.out"):
       if "Convergence criterion met" in line:
         count_criter += 1
 
+    # job with no omegas
+    if len(o) == 0:
+      o = [0]
+
     # check convergence for my multijob
     if count_criter != len(o):
       sys.exit(f"Convergence not reached in {test_file}.")
@@ -980,7 +984,11 @@ def main():
   # column names
   cols = []
   for i in omegas:
-    cols.append(f"{func.upper()}(w={i})/def2-QZVP/Q-Chem")
+    if i == 0:
+      cols.append(f"{func.upper()}/def2-QZVP/Q-Chem")
+    else:
+      cols.append(f"{func.upper()}(w={i})/def2-QZVP/Q-Chem")
+
 
   # column names for csv
   data = [["system"] + cols]
@@ -1011,8 +1019,9 @@ def main():
             f"Convergence error or convergence not yet reached in {system}.")
 
       # check order of omegas
-      if o != omegas:
-        sys.exit("Order of omegas wrong!")
+      if omegas[0] != 0:
+        if o != omegas:
+          sys.exit("Order of omegas wrong!")
 
     data.append([system] + e)
 
@@ -1021,9 +1030,13 @@ def main():
 
   # Save data
   data = np.asarray(data, dtype=str)
-  for i, omega in enumerate(omegas):
-    np.savetxt(f"{func}_{omega}.csv", data[:, [0, i + 1]], delimiter=",", fmt="%s")
-    print(f"Saving raw energies for omega={omega} to '{func}_{omega}.csv'.")
+  if omegas[0] == 0:
+    np.savetxt(f"{func.lower()}.csv", data, delimiter=",", fmt="%s")
+    print(f"Saving raw energies to '{func.lower()}.csv'.")
+  else:
+    for i, omega in enumerate(omegas):
+      np.savetxt(f"{func.lower()}_{omega}.csv", data[:, [0, i + 1]], delimiter=",", fmt="%s")
+      print(f"Saving raw energies for omega={omega} to '{func}_{omega.lower()}.csv'.")
 
 
 if __name__ == '__main__':
