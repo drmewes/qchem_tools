@@ -161,7 +161,7 @@ fi
 
 #copy everything to node (will NOT copy directories for safety reasons. Add an 'r' only if absolutely sure what you are doing)
 #bwlimit limits bandwidth to 5000 kbytes/sec
-rsync -q --bwlimit=5000 \$DIR1/set.tar.xz \$TMP_DIR/\$PBS_JOBID/
+rsync -q --bwlimit=5000 \$DIR1/res_${infile}.sh \$TMP_DIR/\$PBS_JOBID/
 cd \$TMP_DIR/\$PBS_JOBID
 
 #####################################################################################
@@ -184,15 +184,11 @@ printf '%dh:%dm:%02ds\n' \$((\$secs / 3600)) \$((\$secs % 3600 / 60)) \$((\$secs
 #####################################################################################
 #copy everything back that is smaller than 5 gbytes
 
-mv .data ${infile}_for_stat
+mv .data ${infile}_data
 rsync -q --bwlimit=5000 --max-size=5G \$TMP_DIR/\$PBS_JOBID/* \$DIR1/
 
 cd \$DIR1
 rm -r \$TMP_DIR/\$PBS_JOBID
-
-# my statistics stuff
-./stat_final ${infile}_for_stat > stat_${infile}.txt
-rm -f ${infile}_for_stat
 EOT
 
 
@@ -201,7 +197,6 @@ if [ -z $debug ]; then
     echo "Submitting job with settings:"
     echo "Name: $infile, CPUs: $ncores, Nodes: $nnodes, mem: ${memory}GB."
     qsub $scriptfile
-
 else
     echo "Submit file created but not submitted."
     echo "Name: $infile, CPUs: $ncores, Nodes: $nnodes, mem: ${memory}GB."

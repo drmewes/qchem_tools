@@ -32,7 +32,7 @@ def mae(error):
   return np.mean(np.absolute(error))
 
 
-def stdev(error):
+def std(error):
   # std = sqrt( mean( abs( error - mean(error) )**2 ) )
   return np.std(error, dtype=np.float64)
 
@@ -172,7 +172,7 @@ def stat_no_d4(args):
     MDs.append(md(l))
     MAEs.append(mae(l))
     RMSDs.append(rmsd(l))
-    STDs.append(stdev(l))
+    STDs.append(std(l))
 
   data = []
   for i, omega in enumerate(omegas):
@@ -198,16 +198,73 @@ def stat_no_d4(args):
     print("\nSaved data to {}.".format(save_loc))
 
 
+def getFile(path):
+  p = Path(path)
+
+  if not p.is_file():
+    sys.exit(f"File '{p}' not found. Statistics skipped.")
+
+  data = np.genfromtxt(p)
+  smpl = data[:, 0] - data[:, 1]
+
+  md_ = md(smpl)
+  mae_ = mae(smpl)
+  rmsd_ = rmsd(smpl)
+  std_ = std(smpl)
+
+  return md_, mae_, rmsd_, std_
+
+
+def getAll(args):
+  omegas = []
+  MDs = []
+  MAEs = []
+  RMSDs = []
+  STDs = []
+  data = [["func", "omega", "MD", "MAD", "RMSD", "STD"]]
+
+  for filename in sorted(Path(".").glob("*data")):
+    md_, mae_, rmsd_, std_ = getFile(filename)
+    s = filename.name.strip("_data").split("_")
+    func = s[0]
+    omega = s[1]
+
+    data.append([func, omega, md_, mae_, rmsd_, std_])
+    MDs.append(md_)
+    MAEs.append(mae_)
+    RMSDs.append(rmsd_)
+    STDs.append(std_)
+
+  df = pd.DataFrame(data)
+  df.columns = df.iloc[0]
+  df = df.iloc[1:].reset_index(drop=True)
+  df["omega"] = pd.to_numeric(df["omega"])
+  df = df.sort_values(by="omega")
+  print(df.to_string(index=False))
+
+  if args.save:
+    out_file = f"stat_{Path.cwd().name.lower()}_fit.csv"
+    save_loc = os.path.join(os.path.realpath("."), out_file)
+    df.to_csv(save_loc, index=False)
+    print("\nSaved data to {}.".format(save_loc))
+
+  #print('\n'.join(' '.join(str(x) for x in row) for row in data))
+
+
 def stat_fit(args):
   omegas = []
   MDs = []
   MAEs = []
   RMSDs = []
+  funcs = []
 
   for filename in sorted(Path(".").glob("*d4*.out")):
     paramline = False
     found = False
     with open(filename) as f:
+      func = filename.name.split("_")[0]
+      funcs.append(func)
+
       omega = filename.name.split("_")[1]
       if not omega.isdigit():
         omega = 0
@@ -234,10 +291,12 @@ def stat_fit(args):
 
   data = []
   for i, omega in enumerate(omegas):
-    data.append([omega, MDs[i], MAEs[i], RMSDs[i], ])
+    data.append([funcs[i], omega, MDs[i], MAEs[i], RMSDs[i], ])
 
-  cols = ["omega", "MD", "MAD", "RMSD"]
+  cols = ["func", "omega", "MD", "MAD", "RMSD"]
   df = pd.DataFrame(columns=cols, data=data)
+  df["omega"] = pd.to_numeric(df["omega"])
+  df = df.sort_values(by="omega")
   print(df.to_string(index=False))
 
   if args.save:
@@ -252,10 +311,15 @@ def main():
   parser.add_argument("-f", "--fit", action="store_true",
                       help="Statistics from fit job.")
   parser.add_argument("-s", "--save", action="store_true", help="Save output.")
+  parser.add_argument("-o", "--old", action="store_true", help="Get stats from d4.out file.")
   args = parser.parse_args()
 
   if args.fit:
-    stat_fit(args)
+    if args.old:
+      stat_fit(args)
+    else:
+      getAll(args)
+
   else:
     stat_no_d4(args)
 

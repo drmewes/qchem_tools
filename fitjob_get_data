@@ -129,6 +129,7 @@ def main():
   # Save data
   data = np.asarray(data, dtype=str)
   out_file = f"res_{Path.cwd().name.lower()}"
+  out_file = out_file.replace("-low", "")
 
   for i, omega in enumerate(omegas):
     np.savetxt(f"{out_file}_{omega}.sh",
