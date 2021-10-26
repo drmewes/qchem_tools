@@ -970,7 +970,7 @@ def main():
                       help="Print more.")
   args = parser.parse_args()
 
-  func = Path.cwd().name
+  func = Path.cwd().name.replace("-low", "")
 
   # omegas
   omegas = getOmegas()
@@ -983,11 +983,12 @@ def main():
 
   # column names
   cols = []
+  funcname = func.upper().replace("W", "w").replace("H", "h").replace("CAM", "cam")
   for i in omegas:
     if i == 0:
-      cols.append(f"{func.upper()}/def2-QZVP/Q-Chem")
+      cols.append(f"{funcname}/def2-QZVP/Q-Chem")
     else:
-      cols.append(f"{func.upper()}(w={i})/def2-QZVP/Q-Chem")
+      cols.append(f"{funcname}(w={i})/def2-QZVP/Q-Chem")
 
 
   # column names for csv
@@ -1036,7 +1037,7 @@ def main():
   else:
     for i, omega in enumerate(omegas):
       np.savetxt(f"{func.lower()}_{omega}.csv", data[:, [0, i + 1]], delimiter=",", fmt="%s")
-      print(f"Saving raw energies for omega={omega} to '{func}_{omega.lower()}.csv'.")
+      print(f"Saving raw energies for omega={omega} to '{func.lower()}_{omega}.csv'.")
 
 
 if __name__ == '__main__':
