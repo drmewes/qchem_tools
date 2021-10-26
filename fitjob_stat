@@ -130,69 +130,76 @@ def getDataTestSet(set_name, omegas):
 
 
 def stat_no_d4(args):
-  num_decimals = 4
+  num_decimals = 5
+  funcs = ['cam-QTP-01', 'cam-QTP-01-low', 'PBE20', 'LC-wPBEh', 'LC-wPBEh-low', 'PBE', 'LC-wPBE08', 'LC-wPBE08-low', 'BLYP', 'LC-BLYP', 'LC-BLYP-low']
 
-  omegas = getOmegas()
-  print(f"Found {len(omegas)} omega values: {omegas}\n")
+  p = Path(".")
+  dirs = [x for x in p.iterdir() if x.is_dir() and x.name in funcs]
 
-  # get data
-  s22x5 = getDataTestSet("S22x5", omegas)
-  s66x8 = getDataTestSet("S66x8", omegas)
-  nci = getDataTestSet("NCIBLIND10", omegas)
+  if len(dirs) == 0:
+    dirs = [p]
 
-  # chain data together
-  data = s22x5 + s66x8 + nci
+  stat_data = []
+  for d in dirs:
+    omegas = getOmegas(Path(d, "NCIBLIND10/01-A/job.out"))
+    print(f"Found {len(omegas)} omega values in {d}: {omegas}")
 
-  # show data
-  data = np.asarray(data)
-  cols = ["system"] + omegas
-  df = pd.DataFrame(columns=cols, data=data)
+    # get data
+    s22x5 = getDataTestSet(f"{d}/S22x5", omegas)
+    s66x8 = getDataTestSet(f"{d}/S66x8", omegas)
+    nci = getDataTestSet(f"{d}/NCIBLIND10", omegas)
 
-  cols = [i for i in df.columns if i != "system"]
-  for col in cols:
-    df[col] = pd.to_numeric(df[col])
+    # chain data together
+    data = s22x5 + s66x8 + nci
 
-  df = df.round(num_decimals)
+    # show data
+    data = np.asarray(data)
+    cols = ["system"] + omegas
+    df = pd.DataFrame(columns=cols, data=data)
 
-  print(f"Data: E_int - E_ref for {Path.cwd().name}")
-  print("---------------------------------")
-  print(df)
+    cols = [i for i in df.columns if i != "system"]
+    for col in cols:
+      df[col] = pd.to_numeric(df[col])
 
-  ####################
-  ## Get Statistics ##
-  ####################
 
-  MDs = []
-  MAEs = []
-  RMSDs = []
-  STDs = []
+    ####################
+    ## Get Statistics ##
+    ####################
 
-  for col in cols:
-    l = df[col].to_list()
-    MDs.append(md(l))
-    MAEs.append(mae(l))
-    RMSDs.append(rmsd(l))
-    STDs.append(std(l))
+    MDs = []
+    MAEs = []
+    RMSDs = []
+    STDs = []
 
-  data = []
-  for i, omega in enumerate(omegas):
-    data.append([omega, MDs[i], MAEs[i], RMSDs[i], STDs[i]])
+    for col in cols:
+      l = df[col].to_list()
+      MDs.append(md(l))
+      MAEs.append(mae(l))
+      RMSDs.append(rmsd(l))
+      STDs.append(std(l))
 
-  df = pd.DataFrame(columns=["omega", "MD", "MAD", "RMSD", "STD"], data=data)
+    for i, omega in enumerate(omegas):
+      name = d.name.replace("-low", "")
+      if not name:
+        name = Path().cwd().name
+      stat_data.append([name, omega, MDs[i], MAEs[i], RMSDs[i], STDs[i]])
+
+
+  df = pd.DataFrame(columns=["func", "omega", "MD", "MAD", "RMSD", "STD"], data=stat_data)
 
   cols = [i for i in df.columns if i != "measure"]
   for col in cols:
-    df[col] = pd.to_numeric(df[col])
+    if col != "func":
+      df[col] = pd.to_numeric(df[col])
 
   df = df.round(num_decimals)
-  df = df.iloc[::-1]
-  print("\n")
+  #df = df.iloc[::-1] # reverse rows 
   print("Statistics")
   print("----------")
   print(df.to_string(index=False))
 
   if args.save:
-    out_file = f"stat_{Path.cwd().name.lower()}_nod4.csv"
+    out_file = "stat_nod4.csv"
     save_loc = os.path.join(os.path.realpath("."), out_file)
     df.to_csv(save_loc, index=False)
     print("\nSaved data to {}.".format(save_loc))
@@ -223,10 +230,10 @@ def getAll(args):
   STDs = []
   data = [["func", "omega", "MD", "MAD", "RMSD", "STD"]]
 
-  for filename in sorted(Path(".").glob("*data")):
+  for filename in sorted(Path(".").rglob("*data")):
     md_, mae_, rmsd_, std_ = getFile(filename)
     s = filename.name.strip("_data").split("_")
-    func = s[0]
+    func = s[0].upper().replace("W", "w").replace("H", "h").replace("CAM", "cam")
     omega = s[1]
 
     data.append([func, omega, md_, mae_, rmsd_, std_])
@@ -263,6 +270,7 @@ def stat_fit(args):
     found = False
     with open(filename) as f:
       func = filename.name.split("_")[0]
+      func = func.upper().replace("W", "w").replace("H", "h").replace("CAM", "cam")
       funcs.append(func)
 
       omega = filename.name.split("_")[1]

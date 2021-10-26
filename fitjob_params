@@ -9,7 +9,7 @@ from pathlib import Path
 
 def getFileList():
   filelist = []
-  for file in sorted(Path(".").glob('*d4*.out')):
+  for file in sorted(Path(".").rglob('*d4*.out')):
     filelist.append(file)
 
   if len(filelist) == 0:
@@ -30,6 +30,9 @@ def main():
   data = []
   for filename in getFileList():
     path = Path(filename)
+    s = path.name.strip("").split("_")
+    func = s[0]
+    omega = s[1]
     if not path.is_file():
       print(f"WARNING!!! File {path} not found. Skipping...")
       continue
@@ -53,12 +56,12 @@ def main():
 
     if not paramblock:
       print(f"WARNING! No parameters found in {filename}.")
-      data.append([filename, "NaN", "NaN", "NaN"])
+      data.append([func, omega, "NaN", "NaN", "NaN"])
     else:
-      data.append([filename, s8, a1, a2])
+      data.append([func, omega, s8, a1, a2])
 
   # printing and saving
-  cols = ["file", "s8", "a1", "a2"]
+  cols = ["func", "omega", "s8", "a1", "a2"]
 
   try:
     import pandas as pd
