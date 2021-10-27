@@ -129,82 +129,6 @@ def getDataTestSet(set_name, omegas):
   return data
 
 
-def stat_no_d4(args):
-  num_decimals = 5
-  funcs = ['cam-QTP-01', 'cam-QTP-01-low', 'PBE20', 'LC-wPBEh', 'LC-wPBEh-low', 'PBE', 'LC-wPBE08', 'LC-wPBE08-low', 'BLYP', 'LC-BLYP', 'LC-BLYP-low']
-
-  p = Path(".")
-  dirs = [x for x in p.iterdir() if x.is_dir() and x.name in funcs]
-
-  if len(dirs) == 0:
-    dirs = [p]
-
-  stat_data = []
-  for d in dirs:
-    omegas = getOmegas(Path(d, "NCIBLIND10/01-A/job.out"))
-    print(f"Found {len(omegas)} omega values in {d}: {omegas}")
-
-    # get data
-    s22x5 = getDataTestSet(f"{d}/S22x5", omegas)
-    s66x8 = getDataTestSet(f"{d}/S66x8", omegas)
-    nci = getDataTestSet(f"{d}/NCIBLIND10", omegas)
-
-    # chain data together
-    data = s22x5 + s66x8 + nci
-
-    # show data
-    data = np.asarray(data)
-    cols = ["system"] + omegas
-    df = pd.DataFrame(columns=cols, data=data)
-
-    cols = [i for i in df.columns if i != "system"]
-    for col in cols:
-      df[col] = pd.to_numeric(df[col])
-
-
-    ####################
-    ## Get Statistics ##
-    ####################
-
-    MDs = []
-    MAEs = []
-    RMSDs = []
-    STDs = []
-
-    for col in cols:
-      l = df[col].to_list()
-      MDs.append(md(l))
-      MAEs.append(mae(l))
-      RMSDs.append(rmsd(l))
-      STDs.append(std(l))
-
-    for i, omega in enumerate(omegas):
-      name = d.name.replace("-low", "")
-      if not name:
-        name = Path().cwd().name
-      stat_data.append([name, omega, MDs[i], MAEs[i], RMSDs[i], STDs[i]])
-
-
-  df = pd.DataFrame(columns=["func", "omega", "MD", "MAD", "RMSD", "STD"], data=stat_data)
-
-  cols = [i for i in df.columns if i != "measure"]
-  for col in cols:
-    if col != "func":
-      df[col] = pd.to_numeric(df[col])
-
-  df = df.round(num_decimals)
-  #df = df.iloc[::-1] # reverse rows 
-  print("Statistics")
-  print("----------")
-  print(df.to_string(index=False))
-
-  if args.save:
-    out_file = "stat_nod4.csv"
-    save_loc = os.path.join(os.path.realpath("."), out_file)
-    df.to_csv(save_loc, index=False)
-    print("\nSaved data to {}.".format(save_loc))
-
-
 def getFile(path):
   p = Path(path)
 
@@ -245,8 +169,6 @@ def getAll(args):
   df = pd.DataFrame(data)
   df.columns = df.iloc[0]
   df = df.iloc[1:].reset_index(drop=True)
-  df["omega"] = pd.to_numeric(df["omega"])
-  df = df.sort_values(by="omega")
   print(df.to_string(index=False))
 
   if args.save:
@@ -316,20 +238,14 @@ def stat_fit(args):
 
 def main():
   parser = argparse.ArgumentParser(description="Get statistical data.")
-  parser.add_argument("-f", "--fit", action="store_true",
-                      help="Statistics from fit job.")
   parser.add_argument("-s", "--save", action="store_true", help="Save output.")
   parser.add_argument("-o", "--old", action="store_true", help="Get stats from d4.out file.")
   args = parser.parse_args()
 
-  if args.fit:
-    if args.old:
-      stat_fit(args)
-    else:
-      getAll(args)
-
+  if args.old:
+    stat_fit(args)
   else:
-    stat_no_d4(args)
+    getAll(args)
 
 
 if __name__ == '__main__':
