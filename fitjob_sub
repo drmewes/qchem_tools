@@ -6,7 +6,7 @@ dir=$(pwd)
 default_ncores=4
 default_nnodes=1
 default_queue="single"
-default_jobtime=10
+default_jobtime=24
 default_memory=8
 
 D4="\$HOME/projects/d4-param/QZVP/FIT"
