@@ -170,7 +170,7 @@ start=\$(date +%s)
 
 #####################################################################################
 #jobs start here (if you have no idea what this script does, only edit this part...)
-module load dftd4/2.5.1
+#module load dftd4/2.5.1 # already loaded in .bashrc
 tar xf \$DIR1/set.tar.xz
 mfit2 1.00000000 0.40000000 5.00000000 -n ${infile}_d4_eeq_atm -p 'run_atm.sh $infile 1.0'
 #end of job      (....and stop editing here.)
