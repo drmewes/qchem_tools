@@ -1016,8 +1016,7 @@ def main():
 
       # check convergence for my multijob
       if count_criter != num_jobs:
-        sys.exit(
-            f"Convergence error or convergence not yet reached in {system}.")
+        sys.exit(f"Convergence not reached in {system}.")
 
       # check order of omegas
       if omegas[0] != 0:

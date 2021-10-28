@@ -73,7 +73,7 @@ def main():
 
       # check convergence for my multijob
       if count_criter != num_jobs:
-        print("WARNING!!! Convergence not reached in {}.".format(filename))
+        print(f"WARNING!!! Convergence not reached in {filename}.")
 
   ########################################
   ## data collection (outside of loop!) ##
