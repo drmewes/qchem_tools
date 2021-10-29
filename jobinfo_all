@@ -8,16 +8,19 @@ import argparse
 
 
 def main():
-  parser = argparse.ArgumentParser(
-      description='Q-CHEM JOB INFO\nSearch recursively for all .out files and get general info.')
-  parser.add_argument("-v", '--verbose', nargs='?', const=0, type=int,
-                      help="Print more. Number of rows optional. 0 prints everything")
-  parser.add_argument("-s", "--save", nargs='?', const="data.csv", type=str,
-                      help="Save output. Name is optional. Defaults to 'data.csv'.")
-  args = parser.parse_args()
+  args = init_argparser()
 
+  # init lists
   data = []
-  for filename in getFileList():
+  failed = []
+
+  # get all files
+  filelist = getFileList()
+  print(f"Going to check {len(filelist)} files...")
+
+  for i, filename in enumerate(filelist):
+    progress(i, len(filelist))
+
     rem = False
     rem_dict = {}
     count_criter = 0
@@ -73,7 +76,16 @@ def main():
 
       # check convergence for my multijob
       if count_criter != num_jobs:
-        print(f"WARNING!!! Convergence not reached in {filename}.")
+        failed.append(filename)
+
+
+  print("\nFinished!\n")
+  if len(failed) == 0:
+    print("All jobs successful!!")
+  else:
+    print("WARNING!!! Convergence not reached in:")
+    for i in failed:
+      print(i)
 
   ########################################
   ## data collection (outside of loop!) ##
@@ -129,6 +141,16 @@ def main():
       print("Modules 'pandas' and 'numpy' not found. Data will not be saved.")
 
 
+def init_argparser():
+  parser = argparse.ArgumentParser(
+      description='Q-CHEM JOB INFO\nSearch recursively for all .out files and get general info.')
+  parser.add_argument("-v", '--verbose', nargs='?', const=0, type=int,
+                      help="Print more. Number of rows optional. 0 prints everything")
+  parser.add_argument("-s", "--save", nargs='?', const="data.csv", type=str,
+                      help="Save output. Name is optional. Defaults to 'data.csv'.")
+  return parser.parse_args()
+
+
 def getFileList():
   filelist = []
   for file in glob.glob('./**/*.out', recursive=True):
@@ -138,6 +160,17 @@ def getFileList():
     sys.exit("No '.out' files found.")
 
   return filelist
+
+
+def progress(count, total, status=''):
+  bar_len = 60
+  filled_len = int(round(bar_len * count / float(total)))
+
+  percents = round(100.0 * count / float(total), 1)
+  bar = '=' * filled_len + '-' * (bar_len - filled_len)
+
+  sys.stdout.write('[%s] %s%s %s\r' % (bar, percents, '%', status))
+  sys.stdout.flush()
 
 
 if __name__ == '__main__':

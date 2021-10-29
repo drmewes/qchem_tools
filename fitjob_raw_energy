@@ -14,6 +14,114 @@ except ModuleNotFoundError:
   sys.exit("Module 'numpy' not installed. Exiting.")
 
 
+def main():
+  args = init_argparser()
+
+  func = Path.cwd().name.replace("-low", "")
+
+  # omegas
+  omegas = getOmegas()
+  num_jobs = len(omegas)
+  print(f"Found {len(omegas)} omega values: {omegas}\n")
+
+  # column names
+  cols = []
+  funcname = func.upper().replace("W", "w").replace("H", "h").replace("CAM", "cam")
+  for i in omegas:
+    if i == 0:
+      cols.append(f"{funcname}/def2-QZVP/Q-Chem")
+    else:
+      cols.append(f"{funcname}(w={i})/def2-QZVP/Q-Chem")
+
+
+  # column names for csv
+  data = [["system"] + cols]
+
+  for system in systemList():
+    path = Path(f"{system}/job.out")
+    if not path.is_file():
+      print(f"WARNING!!! File {path} not found. Skipping...")
+      continue
+
+    with open(path) as f:
+      count_criter = 0
+      e = []
+      o = []
+
+      for line in f:
+        if line.startswith("omega"):
+          o.append(int(line.strip().split()[1]))
+
+        if "Convergence criterion met" in line:
+          energy = line.split()[1]
+          e.append(float(energy))
+          count_criter += 1
+
+      # check convergence for my multijob
+      if count_criter != num_jobs:
+        sys.exit(f"Convergence not reached in {system}.")
+
+      # check order of omegas
+      if omegas[0] != 0:
+        if o != omegas:
+          sys.exit("Order of omegas wrong!")
+
+    data.append([system] + e)
+
+    if args.verbose:
+      print([system] + e)
+
+  # Save data
+  data = np.asarray(data, dtype=str)
+  if omegas[0] == 0:
+    np.savetxt(f"{func.lower()}.csv", data, delimiter=",", fmt="%s")
+    print(f"Saving raw energies to '{func.lower()}.csv'.")
+  else:
+    for i, omega in enumerate(omegas):
+      np.savetxt(f"{func.lower()}_{omega}.csv", data[:, [0, i + 1]], delimiter=",", fmt="%s")
+      print(f"Saving raw energies for omega={omega} to '{func.lower()}_{omega}.csv'.")
+
+
+def init_argparser():
+  parser = argparse.ArgumentParser(
+      description="Get raw electronic energy from the three test sets.")
+  parser.add_argument("-r", "--reverse", action="store_true",
+                      help="Manually reverse order of omegas.")
+  parser.add_argument("-v", "--verbose", action="store_true",
+                      help="Print more.")
+  return parser.parse_args()
+
+
+def getOmegas(test_file="NCIBLIND10/01-A/job.out"):
+  count_criter = 0
+  o = []
+
+  path = Path(test_file)
+
+  if not path.is_file():
+    print(f"WARNING! Test file '{test_file}' not found. Using default omegas.")
+    omegas = [100, 150, 200, 250, 300, 350, 400, 450]
+    return omegas[::-1]
+
+  with open(path) as f:
+    for line in f:
+      if line.startswith("omega"):
+        o.append(int(line.strip().split()[1]))
+
+      if "Convergence criterion met" in line:
+        count_criter += 1
+
+    # job with no omegas
+    if len(o) == 0:
+      o = [0]
+
+    # check convergence for my multijob
+    if count_criter != len(o):
+      sys.exit(f"Convergence not reached in {test_file}.")
+
+  return o
+
+
 def systemList():
   return ['S22x5/01-A',
           'S22x5/01-B',
@@ -930,113 +1038,6 @@ def systemList():
           'NCIBLIND10/10-15',
           'NCIBLIND10/10-16']
 
-
-def getOmegas(test_file="NCIBLIND10/01-A/job.out"):
-  count_criter = 0
-  o = []
-
-  path = Path(test_file)
-
-  if not path.is_file():
-    print(f"WARNING! Test file '{test_file}' not found. Using default omegas.")
-    omegas = [100, 150, 200, 250, 300, 350, 400, 450]
-    return omegas[::-1]
-
-  with open(path) as f:
-    for line in f:
-      if line.startswith("omega"):
-        o.append(int(line.strip().split()[1]))
-
-      if "Convergence criterion met" in line:
-        count_criter += 1
-
-    # job with no omegas
-    if len(o) == 0:
-      o = [0]
-
-    # check convergence for my multijob
-    if count_criter != len(o):
-      sys.exit(f"Convergence not reached in {test_file}.")
-
-  return o
-
-
-def main():
-  parser = argparse.ArgumentParser(
-      description="Get raw electronic energy from the three test sets.")
-  parser.add_argument("-r", "--reverse", action="store_true",
-                      help="Manually reverse order of omegas.")
-  parser.add_argument("-v", "--verbose", action="store_true",
-                      help="Print more.")
-  args = parser.parse_args()
-
-  func = Path.cwd().name.replace("-low", "")
-
-  # omegas
-  omegas = getOmegas()
-  num_jobs = len(omegas)
-  print(f"Found {len(omegas)} omega values: {omegas}\n")
-
-  if args.reverse:
-    omegas = omegas[::-1]
-    print(f"WARNING! Order of omegas reversed. Now: {omegas}\n")
-
-  # column names
-  cols = []
-  funcname = func.upper().replace("W", "w").replace("H", "h").replace("CAM", "cam")
-  for i in omegas:
-    if i == 0:
-      cols.append(f"{funcname}/def2-QZVP/Q-Chem")
-    else:
-      cols.append(f"{funcname}(w={i})/def2-QZVP/Q-Chem")
-
-
-  # column names for csv
-  data = [["system"] + cols]
-
-  for system in systemList():
-    path = Path(f"{system}/job.out")
-    if not path.is_file():
-      print(f"WARNING!!! File {path} not found. Skipping...")
-      continue
-
-    with open(path) as f:
-      count_criter = 0
-      e = []
-      o = []
-
-      for line in f:
-        if line.startswith("omega"):
-          o.append(int(line.strip().split()[1]))
-
-        if "Convergence criterion met" in line:
-          energy = line.split()[1]
-          e.append(float(energy))
-          count_criter += 1
-
-      # check convergence for my multijob
-      if count_criter != num_jobs:
-        sys.exit(f"Convergence not reached in {system}.")
-
-      # check order of omegas
-      if omegas[0] != 0:
-        if o != omegas:
-          sys.exit("Order of omegas wrong!")
-
-    data.append([system] + e)
-
-    if args.verbose:
-      print([system] + e)
-
-  # Save data
-  data = np.asarray(data, dtype=str)
-  if omegas[0] == 0:
-    np.savetxt(f"{func.lower()}.csv", data, delimiter=",", fmt="%s")
-    print(f"Saving raw energies to '{func.lower()}.csv'.")
-  else:
-    for i, omega in enumerate(omegas):
-      np.savetxt(f"{func.lower()}_{omega}.csv", data[:, [0, i + 1]], delimiter=",", fmt="%s")
-      print(f"Saving raw energies for omega={omega} to '{func.lower()}_{omega}.csv'.")
 
 
 if __name__ == '__main__':
