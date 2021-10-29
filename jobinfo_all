@@ -153,8 +153,11 @@ def init_argparser():
 
 def getFileList():
   filelist = []
-  for file in glob.glob('./**/*.out', recursive=True):
+  for file in glob.glob('./**/job.out', recursive=True):
     filelist.append(file)
+
+  #for file in glob.glob('./**/orca.*.out', recursive=True):
+  #  filelist.append(file)
 
   if len(filelist) == 0:
     sys.exit("No '.out' files found.")
