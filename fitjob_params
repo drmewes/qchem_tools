@@ -31,8 +31,19 @@ def main():
   for filename in getFileList():
     path = Path(filename)
     s = path.name.strip("").split("_")
-    func = s[0]
-    omega = s[1]
+
+    if "orca" in s:
+      func = f"{s[0]}-orca"
+    elif "tm" in s:
+      func = f"{s[0]}-tm"
+    else:
+      func = s[0]
+    
+    if s[1] == "d4":
+      omega = 0
+    else:
+      omega = s[1]
+    
     if not path.is_file():
       print(f"WARNING!!! File {path} not found. Skipping...")
       continue

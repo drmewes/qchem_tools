@@ -156,9 +156,18 @@ def getAll(args):
 
   for filename in sorted(Path(".").rglob("*data")):
     md_, mae_, rmsd_, std_ = getFile(filename)
-    s = filename.name.strip("_data").split("_")
+    s = filename.name.strip("data").split("_")
     func = s[0].upper().replace("W", "w").replace("H", "h").replace("CAM", "cam")
-    omega = s[1]
+    if "orca" in s:
+      func = f"{func}-orca"
+    elif "tm" in s:
+      func = f"{func}-tm"
+
+    print(s)
+    if s[1].isdigit():
+      omega = s[1]
+    else:
+      omega = 0
 
     data.append([func, omega, md_, mae_, rmsd_, std_])
     MDs.append(md_)
