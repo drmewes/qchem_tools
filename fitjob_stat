@@ -163,7 +163,6 @@ def getAll(args):
     elif "tm" in s:
       func = f"{func}-tm"
 
-    print(s)
     if s[1].isdigit():
       omega = s[1]
     else:
