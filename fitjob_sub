@@ -19,8 +19,17 @@ exit 2
 
 
 ### PROCESS OPTIONS
-while getopts dh:m:N:p:n:q:t: options; do
-    case $options in
+while getopts :dh:m:N:p:n:q:t:a:b:s: options; do
+    case "${options}" in
+        s)
+            s8=$OPTARG
+            ;;
+        a)
+            a1=$OPTARG
+            ;;
+        b)
+            a2=$OPTARG
+            ;;
         N)
             jobnamefix=$OPTARG
             ;;
@@ -71,7 +80,8 @@ if [ -z "$1" ]; then
     usage
     exit 1
 else
-    infile=$(echo $(basename $1) | sed "s/res_//" | sed "s/.sh//")   
+    base=$(echo $(basename $1) | sed "s/res_//" | sed "s/.sh//")
+    infile=${base}_${s8}_${a1}_${a2}
 fi
 
 ### CHECK FILE
@@ -88,6 +98,15 @@ fi
 
 
 ### PROCESS VARIABLES
+if [ -z "$s8" ]; then
+    s8=1.00000000
+fi
+if [ -z "$a1" ]; then
+    a1=0.40000000
+fi
+if [ -z "$a2" ]; then
+    a2=5.00000000
+fi
 if [ -z "$jobnamefix" ]; then
     jobnamefix=fitd4_${infile}
 fi
@@ -109,7 +128,7 @@ fi
 
 
 ### CREATING SCRIPTFILE
-scriptfile="$PWD/fitjob_$infile"
+scriptfile="$PWD/fitjob_${infile}"
 
 if [ -e "$scriptfile" ]; then
     echo "$scriptfile already exists! Aborting..."
@@ -161,7 +180,7 @@ fi
 
 #copy everything to node (will NOT copy directories for safety reasons. Add an 'r' only if absolutely sure what you are doing)
 #bwlimit limits bandwidth to 5000 kbytes/sec
-rsync -q --bwlimit=5000 \$DIR1/res_${infile}.sh \$TMP_DIR/\$PBS_JOBID/
+rsync -q --bwlimit=5000 \$DIR1/res_${base}.sh \$TMP_DIR/\$PBS_JOBID/
 cd \$TMP_DIR/\$PBS_JOBID
 
 #####################################################################################
@@ -172,7 +191,7 @@ start=\$(date +%s)
 #jobs start here (if you have no idea what this script does, only edit this part...)
 module load dftd4/2.5.1
 tar xf \$DIR1/set.tar.xz
-mfit2 1.00000000 0.40000000 5.00000000 -n ${infile}_d4_eeq_atm -p 'run_atm.sh $infile 1.0'
+mfit2 $s8 $a1 $a2 -n ${infile}_d4_eeq_atm -p 'run_atm.sh $base 1.0'
 #end of job      (....and stop editing here.)
 
 #####################################################################################
