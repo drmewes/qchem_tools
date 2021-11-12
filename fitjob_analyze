@@ -61,7 +61,8 @@ def init_argparser():
                       type=str, help="Save output. Name is optional. Defaults to 'fit_params.csv'.")
   parser.add_argument("--sort", nargs='?', const="func",
                       type=str, help="Sorting table. Defaults to 'func'")
-  
+  parser.add_argument("-b", "--best", action="store_true",
+                      help="Show only lowest MADs for each omega.")
   return parser.parse_args()
 
 
