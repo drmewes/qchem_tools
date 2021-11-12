@@ -61,6 +61,7 @@ def init_argparser():
                       type=str, help="Save output. Name is optional. Defaults to 'fit_params.csv'.")
   parser.add_argument("--sort", nargs='?', const="func",
                       type=str, help="Sorting table. Defaults to 'func'")
+  
   return parser.parse_args()
 
 
@@ -68,10 +69,12 @@ def main():
   args = init_argparser()
 
   data = []
-  for file in getFileList():
+  flist = getFileList()
+  for i, file in enumerate(flist):
     out_file = Path(f"{file.parent}/{file.name[:-4]}d4_eeq_atm.out")
     data_file = file
 
+    # check of files are present
     if not out_file.is_file():
       print(f"WARNING!!! File {out_file} not found. Skipping...")
       continue
@@ -141,21 +144,32 @@ def main():
       std_ = std(smpl)
 
 
+    # check if fit converged
     if not paramblock:
       print(f"WARNING! No parameters found in {out_file}.")
       data.append([func, omega, s8_start, "NaN", a1_start, "NaN", a2_start, "NaN", md_, mae_, rmsd_, std_])
     else:
       data.append([func, omega, s8_start, s8, a1_start, a1, a2_start, a2, md_, mae_, rmsd_, std_])
 
+    # print progress
+    progress(i, len(flist))
+
+
   # printing and saving
   cols = ["func", "omega", "s8-start", "s8-final", "a1-start", "a1-final",\
    "a2-start", "a2-final", "MD", "MAD", "RMSD", "SD"]
-
-
   df = pd.DataFrame(columns=cols, data=data)
 
+
+  # only get lowest MAD for every omega
+  if args.best:
+    df = df.loc[df.groupby("omega")["MAD"].idxmin()]
+
+
+  # sort by column
   if args.sort:
     df = df.sort_values(by=args.sort)
+
 
   # print to console
   if args.verbose is not None:
@@ -167,11 +181,24 @@ def main():
   else:
     print(df.to_string(index=False))
 
+
   # save
   if args.save:
     save_loc = os.path.join(os.path.realpath("."), args.save)
     df.to_csv(save_loc, index=False)
     print("\nSaved data to {}.".format(save_loc))
+
+
+
+def progress(count, total, status=''):
+  bar_len = 60
+  filled_len = int(round(bar_len * count / float(total)))
+
+  percents = round(100.0 * count / float(total), 1)
+  bar = '=' * filled_len + '-' * (bar_len - filled_len)
+
+  sys.stdout.write('[%s] %s%s %s\r' % (bar, percents, '%', status))
+  sys.stdout.flush()
 
 
 if __name__ == '__main__':
