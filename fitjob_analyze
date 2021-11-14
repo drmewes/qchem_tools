@@ -164,7 +164,7 @@ def main():
 
   # only get lowest MAD for every omega
   if args.best:
-    df = df.loc[df.groupby("omega")["MAD"].idxmin()]
+    df = df.loc[df.groupby(["func", "omega"])["MAD"].idxmin()].sort_values(by=["func", "omega"])
 
 
   # sort by column
