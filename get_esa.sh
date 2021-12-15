@@ -9,6 +9,7 @@ outfile=$(echo $1)
 
 if [ $(grep -c "Welcome to Q-Chem" $outfile) -gt 1 ] ; then
 	echo "More than one job, taking the latter one..."
+	if [ $(grep -c "Have a nice day." $outfile) -le 1 ] ; then echo "Second calc. not yet finished... exiting" ; exit ; fi
 	grep "User input: [2-9] of [2-9]" $outfile -A 1000000 > __temp.out
 	outfile="__temp.out"
 fi
