@@ -279,13 +279,8 @@ echo "The local scratch directory (located on the compute node) is:"
 echo "\$SCRATCH"
 echo ""
 
-module add q-chem/intel/QCHEM_5.0.1_Trunk
-#module load openmpi/intel/64/1.10.1 
-#module load intel/compiler/64/16.0.3/2016.3.210 
-#module load gcc/5.2.0
-#module load intel/mkl/64/11.3.3/2016.3.210
-#export QC=/home/mewes/SOFTWARE/QCHEM_5
-#export QCAUX=/home/mewes/SOFTWARE/QCHEM_AUX
+export QC=/home/mewes/SOFTWARE/QC54_TRUNK
+export QCAUX=/home/mewes/SOFTWARE/QC_AUX
 export QCSCRATCH=\$SCRATCH
 export QCPLATFORM=LINUX_Ix86
 export QCTHREADS=$ncores
