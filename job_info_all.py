@@ -19,8 +19,6 @@ def main():
   print(f"Going to check {len(filelist)} files...")
 
   for i, filename in enumerate(filelist):
-    progress(i, len(filelist))
-
     rem = False
     rem_dict = {}
     count_criter = 0
@@ -78,6 +76,7 @@ def main():
       if count_criter != num_jobs:
         failed.append(filename)
 
+    progress(i+1, len(filelist))
 
   print("\nFinished!\n")
   if len(failed) == 0:
@@ -155,9 +154,6 @@ def getFileList():
   filelist = []
   for file in glob.glob('./**/job.out', recursive=True):
     filelist.append(file)
-
-  #for file in glob.glob('./**/orca.*.out', recursive=True):
-  #  filelist.append(file)
 
   if len(filelist) == 0:
     sys.exit("No '.out' files found.")
