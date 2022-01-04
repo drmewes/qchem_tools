@@ -9,7 +9,7 @@ BINARY_LOCATION=""
 
 ncores_default=2
 nnodes_default=1
-jobtime_default=240
+jobtime_default=480
 #memory=2
 
 jobhold=""
@@ -17,6 +17,7 @@ holdid=""
 debug=""
 queue=""
 user=$USER
+copyall="no"
 
 function usage {
   cat <<-EOF
@@ -285,10 +286,12 @@ echo ""
 echo "The local scratch directory (located on the compute node) is:"
 echo "/tmp1/$user/"
 echo ""
-export QC=/home/mewes/SOFTWARE/QC54_TRUNK4INTEL_MM
+
+export QC=/home/mewes/SOFTWARE/QC542_TRUNK4GCC
 export QCAUX=/home/mewes/SOFTWARE/QC_AUX
 export QCSCRATCH=/tmp1/$user/
 export QCPLATFORM=LINUX_Ix86
+
 cd 
 # Backup old out files if existing 
 [ -e ${outfile}_OLD ] && cp $outfile ${outfile}_OLDER
@@ -312,14 +315,14 @@ fi
 if [ -z $debug ]; then
   cat <<EOT
 Submitting job with settings:
-Name: $jobident, #CPU: $ncores, #Nodes: $nnodes, mem: ${memory}GB.
+Name: $jobident, #CPU: $ncores, #Nodes: $nnodes, mem: ${memory}GB, cpy-all? ${copyall}.
 EOT
   qsub $optionstring $scriptfile
 
 else
   cat <<EOT
 Submit file created but not submitted. 
-Name: $inname, #CPU: $ncores, #Nodes: $nnodes, mem: ${memory}GB.
+Name: $inname, #CPU: $ncores, #Nodes: $nnodes, mem: ${memory}GB, cpy-all? ${copyall}.
 Submit with qsub $scriptname!
 EOT
 fi

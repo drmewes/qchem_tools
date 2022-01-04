@@ -88,9 +88,9 @@ fi
 		boxymax=$(echo "scale=2 ; ($ymax+$extra)/1" | bc)
 		boxzmin=$(echo "scale=2 ; ($zmin-$extra)/1" | bc)
 		boxzmax=$(echo "scale=2 ; ($zmax+$extra)/1" | bc)
-		xgrid=$(echo "($xmax-($xmin))/$spacing" | bc)
-		ygrid=$(echo "($ymax-($ymin))/$spacing" | bc)
-		zgrid=$(echo "($zmax-($zmin))/$spacing" | bc)
+		xgrid=$(echo "($boxxmax-($boxxmin))/$spacing" | bc)
+		ygrid=$(echo "($boxymax-($boxymin))/$spacing" | bc)
+		zgrid=$(echo "($boxzmax-($boxzmin))/$spacing" | bc)
 		[ ! $quiet ] && echo "... and writing it, for your convenience, in Q-Chem %plot format:" ; echo 
 		echo "\$plots"
 		echo "att. det. elec. hole and diff. dens for $file"
