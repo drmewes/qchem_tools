@@ -1,0 +1,335 @@
+#!/bin/bash
+
+dir=`pwd`
+PGM_NAME="subqchem submit script"
+PGM_VERSION="1.1"
+BINARY_LOCATION=""
+
+### SET DEFAULT VARIABLES
+
+ncores_default=8
+nnodes_default=1
+jobtime_default=72
+#memory=2
+
+
+jobhold=""
+holdid=""
+debug=""
+queue=""
+
+function usage
+{
+    cat <<-EOF
+$PGM_NAME $PGM_VERSION
+Usage: $PGM_NAME [-j JOB_ID] [-t TIME]  [-m SIZE] [-N NAME] [-p CPUS] [-n NODES] [-a COPY BACK ALL FILES] INPUT_FILE
+
+EOF
+
+    exit 2
+
+}
+
+function printExit
+{
+    case $1 in
+        [iI]) echo INFO: "$2" ;;
+        [wW]) echo WARNING: "$2" ;;
+        [eE]) echo ERROR: "$2" ; exit 1 ;;
+           *) echo "$1" ;;
+    esac
+}
+
+
+function testFile
+{
+    if [ ! -r "$1" -o ! -f "$1" ] ; then
+        if [ "$2" = "return" ] ; then
+            returncode="1"
+        else
+            printExit E "Inputfile \"$1\" was not found."
+        fi
+    else
+        returncode="0"
+    fi
+
+return "$returncode"
+}
+
+
+### PROCESS OPTIONS
+
+while getopts adhj:m:N:p:n:q:t: options ; do
+      case $options in
+         
+         N) jobnamefix=$OPTARG
+            ;;
+         p) ncores=$OPTARG
+            ;;
+         n) nnodes=$OPTARG
+            ;;
+         a) copyall="yes"
+            ;;
+         m) memory=$OPTARG
+            ;;
+         j) holdid=$OPTARG
+            jobhold=1
+            echo "Not yet implemented."
+            exit 1
+            ;;
+         q) queue=$OPTARG
+            ;;                 
+         d) debug=1
+            ;;
+         h) usage
+            exit 0
+            ;;
+         t) jobtime=$OPTARG
+            ;;
+         \?)
+            echo "Invalid option: -$OPTARG" 
+            exit 1
+            ;;
+         \:)
+            echo "Option -$OPTARG requires an argument." 
+            exit 1
+            ;;
+         *) usage
+            exit 1
+            ;;
+      esac
+   done
+
+
+shift $((OPTIND-1))
+
+
+### CHECK FOR INPUT ARGUMENTS
+
+if [ -z "$1" ]; then
+   echo "No filename specified."
+   exit 1
+else
+   myname=$1
+fi
+
+### CREATE DEFAULT JOBNAME
+
+jobname_default="`echo $dir | sed "s/\/data\/$USER\//d/" | sed "s/\/home\/$USER\//h/ ; s/\//./g"`.$myname"
+
+### PROCESS VARIABLES
+
+if [ -z "$jobnamefix" ]; then
+   jobnamefix=$jobname_default
+fi
+if [ -z "$ncores" ]; then
+   ncores=$ncores_default
+fi
+if [ -z "$nnodes" ]; then
+   nnodes=$nnodes_default
+fi
+if [ -z "$memory" ]; then
+   memory=2
+fi
+if [ -z "$jobtime" ]; then
+   jobtime=$jobtime_default
+fi
+
+### CONSTRUCT OUTPUT FILENAME
+
+if [ -z "$1" ] ; then
+    usage
+    printExit E "No filename specified."
+else
+    myname=$1
+fi
+
+#
+# Assemble the names for the input, output and error file.
+#
+
+inputsuffix=(.com .in .gjf .mol .umol)
+outputsuffix=(.log .out .log)
+choices=${#inputsuffix[*]}
+found=""
+
+if [ "${myname##*.}" != "$myname" ] ; then
+    for ((suffix=0; suffix<choices; suffix++)) ; do
+        if [ ".${myname##*.}" = "${inputsuffix[$suffix]}" ] ; then
+            testFile "$myname"
+            found="1"
+            jobname=${myname%${inputsuffix[$suffix]}}
+            if [ "${jobname:0:1}" = "/" ] ; then
+                infile=$jobname${inputsuffix[$suffix]}
+                outfile=$jobname${outputsuffix[$suffix]}
+		scriptfile=$jobname.sh
+            else
+                infile=$PWD/$jobname${inputsuffix[$suffix]}
+                outfile=$PWD/$jobname${outputsuffix[$suffix]}
+		scriptfile=$PWD/$jobname.sh
+            fi
+            break
+        fi
+    done
+fi
+
+if [ -z "$found" ] ; then
+    jobname="$myname"
+    for ((suffix=0; suffix<choices; suffix++)) ; do
+        if testFile "$jobname${inputsuffix[$suffix]}" "return" ; then
+            if [ -n "$found" ] ; then
+                printExit E "The name \"$myname\" is ambiguous, because more than one file with the possible suffixes [ ${inputsuffix[*]} ] exist."
+            else
+                found="1"
+                if [ "${jobname:0:1}" = "/" ] ; then
+                    infile=$jobname${inputsuffix[$suffix]}
+                    outfile=$jobname${outputsuffix[$suffix]}
+		    scriptfile=$jobname.sh
+                else
+                    infile=$PWD/$jobname${inputsuffix[$suffix]}
+                    outfile=$PWD/$jobname${outputsuffix[$suffix]}
+                    scriptfile=$PWD/$jobname.sh
+                fi
+            fi
+        fi
+    done
+    if [ -z "$found" ] ; then
+        if testFile "$myname" "return" ; then
+            printExit E "Your file \"$myname\" was found, but you have to append a suffix { ${inputsuffix[*]} } for clearness."
+        else
+            printExit E "No file \"$myname\" ending in [ ${inputsuffix[*]} ] was found."
+        fi
+    fi
+fi
+
+### SET QUEUE TO DEFAULT IF $QUEUE IS EMPTY
+
+if [ -z "$queue" ]; then
+
+    if [ "$jobtime" -le 2  ]; then
+        queue="test"
+    elif [ "$jobtime" -gt 2 ] && [ "$jobtime" -le 72 ]; then
+        queue="short"
+    elif [ "$jobtime" -gt 72 ]; then
+        queue="long"
+    fi
+fi
+
+
+## GET MAIL
+
+mail=`cat /home/${USER}/.forward`
+
+### set %mem and %nproc according to qsub
+
+cp $infile submitfile
+
+memset=`grep --ignore-case %maxcore submitfile`
+coreset=`grep --ignore-case %pal submitfile`
+
+memoryMB=$((${memory}*1000))
+
+mv submitfile $infile
+
+### CREATE OPTION STRING FOR QSUB
+
+if [ -z "$jobhold" ]; then
+   optionstring=""
+else
+   optionstring="-W depend=afterok:$holdid"
+
+fi
+
+inname=$(basename $infile)
+outname=$(basename $outfile)
+scriptname=$(basename $scriptfile)
+savedir=$(echo $outname | sed "s/.out/_files/")
+
+### ADJUST TIME AND CHANGE INTO DAYS, HOURS
+
+days=$(bc <<< "$jobtime/24")
+hours=$(bc <<< "$jobtime-($days*24)")
+
+### CREATE INPUT SCRIPT FOR QSUB
+test -e $scriptfile && mv $scriptfile $scriptfile-OLD
+
+cat <<EOT >> $scriptfile
+#!/bin/bash
+
+#SBATCH --job-name=$jobnamefix
+#SBATCH -t $days-$hours:00
+#SBATCH -n $ncores
+#SBATCH -N $nnodes
+#SBATCH --mem-per-cpu=${memory}G
+#SBATCH --mail-type=END
+#SBATCH --mail-type=FAIL
+#SBATCH -o /home/${USER}/err/qchem-%j
+#SBATCH --mail-user=$mail
+#SBATCH -p $queue
+
+echo "This job was submitted from the computer:"
+echo "\$SLURM_SUBMIT_HOST"
+echo "and the directory:"
+echo "\$SLURM_SUBMIT_DIR"
+echo ""
+echo "It is running on the compute node:"
+echo "\$SLURM_CLUSTER_NAME"
+echo ""
+echo "The local scratch directory (located on the compute node) is:"
+echo "\$SCRATCH"
+echo ""
+
+export QC=/home/mewes/SOFTWARE/QC54_TRUNK
+export QCAUX=/home/mewes/SOFTWARE/QC_AUX
+export QCSCRATCH=\$SCRATCH
+export QCPLATFORM=LINUX_Ix86
+export QCTHREADS=$ncores
+export OMP_NUM_THREADS=$ncores
+
+# Go into Scratch
+cd \$SCRATCH
+cp $infile $dir/*.mol .
+
+# Backup old out file is existing 
+[ -e $outfile ] && cp $outfile ${outfile}_OLD
+
+# Execute the program
+if [ "$copyall" = "yes" ] ; then
+\$QC/bin/qchem -save -np $nnodes $inname $outfile $outname.plots
+else
+\$QC/bin/qchem -np $nnodes $inname $outfile
+fi
+
+EOT
+
+if [ $copyall ]; then
+    cat <<EOT >> $scriptfile
+
+#Copy plots back from Scratch 
+cp -r \$SCRATCH/$outname.plots/plots \$SLURM_SUBMIT_DIR/$savedir
+
+EOT
+fi
+
+
+
+if [ -z $debug ]; then
+   sbatch $optionstring $scriptfile
+   #rm $scriptfile
+
+   cat <<EOT
+
+Job has been submitted.
+Name: $inname, #CPU: $ncores, #Nodes: $nnodes, mem: ${memory}GB.
+EOT
+
+else
+   cat <<EOT
+
+Job has been created. Submit file will be saved. 
+Name: $inname, #CPU: $ncores, #Nodes: $nnodes, mem: ${memory}GB.
+Submit with sbatch $scriptname!
+EOT
+fi 
+
+exit 0
