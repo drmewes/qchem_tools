@@ -34,7 +34,8 @@ out=load_all_plt.vmd
 plot=plot_all.vmd
 conv=convert.bash
 html=vmd_plots.html
-ncol=3
+ncol=2
+
 ###
 
 
@@ -103,7 +104,20 @@ echo "material change diffuse Ghost 0.000000" >> $out
 echo "material change ambient Ghost 0.300000" >> $out
 echo "material change opacity Ghost 0.100000" >> $out
 echo "material change shininess Ghost 0.000000" >> $out
-echo "mol modstyle 0 0 DynamicBonds 1.800000 0.200000 42.000000" >> $out
+echo "material change diffuse Glass1 1.00" >> $out
+echo "material change opacity Glass1 0.30" >> $out
+echo "material change specular Glass1 0.30" >> $out
+#I dont like VMD default element colors
+echo "color Name B green"  >> $out
+echo "color Element Ag silver" >> $out
+echo "color Element Cu orange" >> $out
+echo "color Element B green" >> $out
+#echo "menu color on" >> $out
+echo "color Name C gray" >> $out
+#echo "color change 0.950000 0.750000 0.270000" >> $out
+echo "color Name P tan" >> $out
+#echo "color change 0.430000 0.430000 0.430000" >> $out
+echo "mol modstyle 0 0 DynamicBonds 2.000000 0.200000 42.000000" >> $out
 echo "mol modselect 0 0 all not type H" >> $out
 echo "mol addrep 0" >> $out
 echo "mol modstyle 1 0 VDW 0.200000 42.000000" >> $out 
@@ -116,8 +130,8 @@ echo "mol addrep 0" >> $out
 echo "mol addrep 0" >> $out
 echo "mol modmaterial 2 0 Opaque" >> $out
 echo "mol modmaterial 3 0 Opaque" >> $out
-echo "mol modmaterial 4 0 Glass3" >> $out
-echo "mol modmaterial 5 0 Glass3" >> $out
+echo "mol modmaterial 4 0 Glass1" >> $out
+echo "mol modmaterial 5 0 Glass1" >> $out
 echo "mol modmaterial 6 0 Ghost" >> $out
 echo "mol modmaterial 7 0 Ghost" >> $out
 echo "mol modstyle 2 0 Isosurface  $isov 0 0 0 1 1" >> $out
@@ -132,7 +146,17 @@ echo "mol modcolor 4 0 ColorID 0" >> $out
 echo "mol modcolor 5 0 ColorID 1" >> $out
 echo "mol modcolor 6 0 ColorID 0" >> $out
 echo "mol modcolor 7 0 ColorID 1" >> $out
+echo "mol addrep 0" >> $out
+#Longer Bonds and bigger Balls for (some) heavy atoms (Period 3+)
+echo "mol modstyle 8 0 DynamicBonds 3.000000 0.200000 42.000000" >> $out
+echo "mol modselect 8 0 type P or type S or type Ag or type Cu or type Br or type I" >> $out
+echo "mol modcolor 8 0 Element" >> $out
+echo "mol addrep 0" >> $out
+echo "mol modstyle 9 0 VDW 0.300000 42.000000" >> $out
+echo "mol modselect 9 0 type P or type Ag or type Cu or type Br or type I" >> $out
+echo "mol modcolor 9 0 Element" >> $out
 echo "" > $plot
+
 
 echo "#!/bin/bash" > $conv
 chmod +x $conv
