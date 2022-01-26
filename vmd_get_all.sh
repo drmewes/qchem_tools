@@ -112,16 +112,15 @@ echo "color Name B green"  >> $out
 echo "color Element Ag silver" >> $out
 echo "color Element Cu orange" >> $out
 echo "color Element B green" >> $out
-#echo "menu color on" >> $out
 echo "color Name C gray" >> $out
-#echo "color change 0.950000 0.750000 0.270000" >> $out
 echo "color Name P tan" >> $out
-#echo "color change 0.430000 0.430000 0.430000" >> $out
+#Use dynamic bonds and VDW atoms for all but H
 echo "mol modstyle 0 0 DynamicBonds 2.000000 0.200000 42.000000" >> $out
 echo "mol modselect 0 0 all not type H" >> $out
 echo "mol addrep 0" >> $out
 echo "mol modstyle 1 0 VDW 0.200000 42.000000" >> $out 
-echo "mol modselect 1 0 all not type H" >> $out 
+echo "mol modselect 1 0 all not type H" >> $out
+#Add surfaces 
 echo "mol addrep 0" >> $out
 echo "mol addrep 0" >> $out
 echo "mol addrep 0" >> $out
@@ -148,12 +147,12 @@ echo "mol modcolor 6 0 ColorID 0" >> $out
 echo "mol modcolor 7 0 ColorID 1" >> $out
 echo "mol addrep 0" >> $out
 #Longer Bonds and bigger Balls for (some) heavy atoms (Period 3+)
-echo "mol modstyle 8 0 DynamicBonds 3.000000 0.200000 42.000000" >> $out
-echo "mol modselect 8 0 type P or type S or type Ag or type Cu or type Br or type I" >> $out
+echo "mol modstyle 8 0 DynamicBonds 2.800000 0.200000 42.000000" >> $out
+echo "mol modselect 8 0 type P or type S or type Si or type Ag or type Cu or type Br or type I" >> $out
 echo "mol modcolor 8 0 Element" >> $out
 echo "mol addrep 0" >> $out
 echo "mol modstyle 9 0 VDW 0.300000 42.000000" >> $out
-echo "mol modselect 9 0 type P or type Ag or type Cu or type Br or type I" >> $out
+echo "mol modselect 9 0 type P or type S or type Si or type Ag or type Cu or type Br or type I" >> $out
 echo "mol modcolor 9 0 Element" >> $out
 echo "" > $plot
 
