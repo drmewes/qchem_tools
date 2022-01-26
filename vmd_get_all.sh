@@ -154,8 +154,11 @@ echo "mol addrep 0" >> $out
 echo "mol modstyle 9 0 VDW 0.300000 42.000000" >> $out
 echo "mol modselect 9 0 type P or type S or type Si or type Ag or type Cu or type Br or type I" >> $out
 echo "mol modcolor 9 0 Element" >> $out
+echo "menu color on" >> $out
+echo "color Name P tan" >> $out
+echo "color change rgb 5 0.950000 0.700000 0.270000" >> $out
+echo "menu color off" >> $out
 echo "" > $plot
-
 
 echo "#!/bin/bash" > $conv
 chmod +x $conv
