@@ -34,7 +34,7 @@ out=load_all_plt.vmd
 plot=plot_all.vmd
 conv=convert.bash
 html=vmd_plots.html
-ncol=2
+ncol=3 
 
 ###
 

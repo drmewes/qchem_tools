@@ -287,10 +287,10 @@ echo "The local scratch directory (located on the compute node) is:"
 echo "/tmp1/$user/"
 echo ""
 
-export QC=/home/mewes/SOFTWARE/QC542_TRUNK4GCC
-export QCAUX=/home/mewes/SOFTWARE/QC_AUX
-export QCSCRATCH=/tmp1/$user/
-export QCPLATFORM=LINUX_Ix86
+module load q-chem/gcc+mkl/5.4.2
+#export QCAUX=/home/mewes/SOFTWARE/QC_AUX
+#export QCSCRATCH=/tmp1/$user/
+#export QCPLATFORM=LINUX_Ix86
 
 cd 
 # Backup old out files if existing 
